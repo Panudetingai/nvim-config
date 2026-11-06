@@ -1,0 +1,154 @@
+# Panudetingai Neovim Config — LLM & AI Agent Installation Guide (`llm.txt`)
+
+> Purpose: Machine-readable & step-by-step instructions for AI coding agents (Cursor, Claude Code, Codex, Windsurf, OpenCode, etc.) to install, verify, and configure Panudetingai's Neovim setup on any macOS, Linux, or Windows machine without human intervention unless sudo/admin authentication is required.
+
+## 1. Repository Metadata
+
+- **Repository URL**: `https://github.com/Panudetingai/nvim-config.git`
+- **Target Config Path (macOS / Linux)**: `~/.config/nvim` (or `$XDG_CONFIG_HOME/nvim`)
+- **Target Config Path (Windows)**: `%LOCALAPPDATA%\nvim` (e.g. `C:\Users\<User>\AppData\Local\nvim`)
+- **Minimum Neovim Version**: `0.11.0+` (REQUIRED — uses native `vim.lsp.config` and `vim.lsp.enable` APIs introduced in Neovim 0.11)
+- **Plugin Manager**: `folke/lazy.nvim` (lockfile tracked via `lazy-lock.json`)
+- **Key Features**:
+  - Kanagawa Wave custom deep-dark theme (`#111218`)
+  - `supermaven-nvim` AI autocomplete (`<Tab>` to accept)
+  - `saghen/blink.cmp` LSP completion (`<CR>` to accept) + cmdline auto-popup
+  - `nvim-neo-tree/neo-tree.nvim` file explorer (`<C-b>`)
+  - `ibhagwan/fzf-lua` quick open (`<C-p>`) and live grep (`<Space>g`)
+  - `brenton-leighton/multiple-cursors.nvim` (`<C-d>`, `<C-S-l>`)
+  - Native Thai Kedmanee keyboard layout mapping (`langmap` + normal/visual/cmdline mappings)
+
+---
+
+## 2. Automated Agent Workflow (Execute in Order)
+
+When asked by the user to install or set up this Neovim configuration, follow these exact steps:
+
+### Step 1: Detect OS & Check Prerequisites
+
+Run a single shell check to inspect installed tools and versions:
+
+```bash
+uname -s
+nvim --version | head -n 1 || true
+git --version || true
+fzf --version || true
+rg --version || true
+node --version || true
+```
+
+**Required Dependencies**:
+1. `nvim` (MUST be `>= 0.11.0`)
+2. `git`
+3. `fzf` (required by `fzf-lua` for `<C-p>` file search)
+4. `rg` / `ripgrep` (required by `fzf-lua` for `<Space>g` live grep)
+5. `node` & `npx` (used by LSP servers: `ts_ls`, `tailwindcss`, `html`, `cssls`)
+6. C compiler (`clang` or `gcc`) & `make` (used by `nvim-treesitter` to compile parsers)
+
+### Step 2: Install Missing Dependencies
+
+- **macOS (Homebrew)**:
+  ```bash
+  brew install neovim git fzf ripgrep node
+  brew install --cask font-jetbrains-mono-nerd-font
+  ```
+- **Linux (Ubuntu / Debian)**:
+  ```bash
+  sudo apt-get update && sudo apt-get install -y git curl unzip build-essential fzf ripgrep nodejs npm
+  ```
+  *(Note: If `nvim --version` on Ubuntu/Debian is older than 0.11, install the official Neovim release binary from `https://github.com/neovim/neovim/releases/latest` or via Homebrew on Linux).*
+- **Linux (Arch)**:
+  ```bash
+  sudo pacman -S --needed --noconfirm neovim git base-devel fzf ripgrep nodejs npm ttf-jetbrains-mono-nerd
+  ```
+- **Windows (PowerShell / winget)**:
+  ```powershell
+  winget install --e --id Neovim.Neovim
+  winget install --e --id Git.Git
+  winget install --e --id junegunn.fzf
+  winget install --e --id BurntSushi.ripgrep.MSVC
+  winget install --e --id OpenJS.NodeJS.LTS
+  ```
+
+### Step 3: Install the Neovim Configuration
+
+#### Option A: Using the Official Installer Script (Recommended)
+
+- **macOS / Linux**:
+  ```bash
+  curl -fsSL https://raw.githubusercontent.com/Panudetingai/nvim-config/main/install.sh | bash
+  ```
+- **Windows (PowerShell)**:
+  ```powershell
+  irm https://raw.githubusercontent.com/Panudetingai/nvim-config/main/install.ps1 | iex
+  ```
+
+#### Option B: Direct Git Clone (If running step-by-step)
+
+- **macOS / Linux**:
+  ```bash
+  NVIM_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nvim"
+  if [ -d "$NVIM_DIR" ] && [ ! -d "$NVIM_DIR/.git" ]; then
+    mv "$NVIM_DIR" "${NVIM_DIR}.backup.$(date +%Y%m%d_%H%M%S)"
+  fi
+  git clone https://github.com/Panudetingai/nvim-config.git "$NVIM_DIR"
+  ```
+- **Windows (PowerShell)**:
+  ```powershell
+  $NvimDir = "$env:LOCALAPPDATA\nvim"
+  if (Test-Path $NvimDir) {
+    Move-Item $NvimDir "$NvimDir.backup.$(Get-Date -Format 'yyyyMMdd_HHmmss')"
+  }
+  git clone https://github.com/Panudetingai/nvim-config.git $NvimDir
+  ```
+
+### Step 4: Bootstrap Plugins & Parsers Headlessly
+
+Run Neovim in headless mode so `lazy.nvim` restores exact plugin versions from `lazy-lock.json`:
+
+```bash
+nvim --headless "+Lazy! restore" +qa
+```
+
+### Step 5: Optional Global LSP Packages (Recommended for Fast Startup)
+
+To avoid cold-start `npx` downloads when opening TypeScript, Tailwind, HTML, or CSS files, install the language servers globally:
+
+```bash
+npm install -g typescript typescript-language-server vscode-langservers-extracted @tailwindcss/language-server
+```
+
+If the user writes Rust (`rustup` is installed):
+
+```bash
+rustup component add rust-analyzer clippy
+```
+
+### Step 6: Verification Check
+
+Verify that Neovim loads cleanly without startup errors:
+
+```bash
+nvim --headless -c "echo 'NVIM_CONFIG_OK'" -c "qa"
+```
+
+---
+
+## 3. Post-Install Notes to Report Back to the User
+
+After completing installation, inform the user of these 2 items:
+1. **Supermaven AI First-Time Auth**: Open `nvim` and run `:SupermavenUseFree` once to activate AI ghost-text autocomplete.
+2. **Terminal Font**: Ensure the terminal emulator font is set to a **Nerd Font** (e.g. `JetBrainsMono Nerd Font`) so file icons render properly.
+
+---
+
+## 4. Sync / Update Commands for Future Maintenance
+
+- **Pull latest config on any machine**:
+  ```bash
+  git -C ~/.config/nvim pull --ff-only && nvim --headless "+Lazy! restore" +qa
+  ```
+- **Push local config changes back to GitHub**:
+  ```bash
+  git -C ~/.config/nvim add -A && git -C ~/.config/nvim commit -m "chore: update nvim config" && git -C ~/.config/nvim push
+  ```
