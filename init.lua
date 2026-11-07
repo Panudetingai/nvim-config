@@ -90,14 +90,14 @@ require("lazy").setup({
           theme = {
             all = {
               ui = {
-                bg = "#111218",        -- พื้นหลัง editor เข้มลึก (เดิม #1f1f28)
-                bg_dim = "#0d0e13",    -- พื้นหลังหน้าต่างข้างเคียง/sidebar
+                bg = "#1f1f1f",        -- พื้นหลัง editor เข้มลึก (เดิม #1f1f28)
+                bg_dim = "#181818",    -- พื้นหลังหน้าต่างข้างเคียง/sidebar
                 bg_gutter = "none",    -- แถบเลขบรรทัดกลืนเป็นเนื้อเดียวกับพื้นหลัง editor
-                bg_m3 = "#0d0e13",
-                bg_m2 = "#0f1016",
-                bg_m1 = "#14161e",
-                bg_p1 = "#191b24",     -- บรรทัดเคอร์เซอร์ / popup เข้มกำลังดี
-                bg_p2 = "#222532",     -- แถบที่ถูกเลือกในเมนู
+                bg_m3 = "#181818",
+                bg_m2 = "#1b1b1b",
+                bg_m1 = "#202020",
+                bg_p1 = "#282828",     -- บรรทัดเคอร์เซอร์ / popup เข้มกำลังดี
+                bg_p2 = "#313131",     -- แถบที่ถูกเลือกในเมนู
               },
             },
           },
@@ -106,30 +106,66 @@ require("lazy").setup({
           local theme = colors.theme
           return {
             -- พื้นหลัง editor และขอบหน้าต่างเข้มลึก คอนทราสต์กับสีโค้ดชัดเจน
-            Normal = { fg = theme.ui.fg, bg = "#111218" },
-            NormalNC = { fg = theme.ui.fg_dim, bg = "#111218" },
-            SignColumn = { bg = "#111218" },
-            LineNr = { fg = "#54546d", bg = "#111218" },
-            CursorLine = { bg = "#191b24" },
-            CursorLineNr = { fg = theme.diag.warning, bg = "#191b24", bold = true },
-            WinSeparator = { fg = "#1f2230", bg = "#111218" },
+            Normal = { fg = theme.ui.fg, bg = "#1f1f1f" },
+            NormalNC = { fg = theme.ui.fg_dim, bg = "#1f1f1f" },
+            SignColumn = { bg = "#1f1f1f" },
+            LineNr = { fg = "#6e7681", bg = "#1f1f1f" },
+            CursorLine = { bg = "#282828" },
+            CursorLineNr = { fg = theme.diag.warning, bg = "#282828", bold = true },
+            WinSeparator = { fg = "#2b2b2b", bg = "#1f1f1f" },
             -- ปรับเมนู/popup และ Neo-tree ให้เข้ากับพื้นหลังเข้ม
-            NormalFloat = { bg = "#161821" },
-            FloatBorder = { fg = "#363a4f", bg = "#161821" },
-            FloatTitle = { fg = theme.syn.fun, bold = true, bg = "#161821" },
-            BlinkCmpMenu = { fg = theme.ui.fg, bg = "#161821" },
-            BlinkCmpMenuBorder = { fg = "#2a2e3f", bg = "#161821" },
-            BlinkCmpMenuSelection = { fg = "NONE", bg = "#24283b", bold = true },
-            NeoTreeNormal = { fg = theme.ui.fg_dim, bg = "#0d0e13" },
-            NeoTreeNormalNC = { fg = theme.ui.fg_dim, bg = "#0d0e13" },
-            NeoTreeEndOfBuffer = { fg = "#0d0e13", bg = "#0d0e13" },
+            NormalFloat = { bg = "#202020" },
+            FloatBorder = { fg = "#3c3c3c", bg = "#202020" },
+            FloatTitle = { fg = theme.syn.fun, bold = true, bg = "#202020" },
+            BlinkCmpMenu = { fg = theme.ui.fg, bg = "#202020" },
+            BlinkCmpMenuBorder = { fg = "#2b2b2b", bg = "#202020" },
+            BlinkCmpMenuSelection = { fg = "NONE", bg = "#313131", bold = true },
+            NeoTreeNormal = { fg = theme.ui.fg_dim, bg = "#181818" },
+            NeoTreeNormalNC = { fg = theme.ui.fg_dim, bg = "#181818" },
+            NeoTreeEndOfBuffer = { fg = "#181818", bg = "#181818" },
             NeoTreeFileIcon = { fg = theme.ui.special },
             NeoTreeDirectoryIcon = { fg = theme.syn.fun },
             NeoTreeDirectoryName = { fg = theme.syn.fun, bold = true },
             NeoTreeRootName = { fg = theme.syn.keyword, bold = true },
-            WhichKeyNormal = { bg = "#0d0e13" },
-            WhichKeyBorder = { fg = "#2a2e3f", bg = "#0d0e13" },
-            WhichKeyTitle = { fg = theme.syn.fun, bg = "#0d0e13", bold = true },
+            -- สีโค้ดชุด Claude: keyword ส้ม / string เขียว / function ฟ้า / type ทอง / number ม่วง
+            Normal = { fg = "#cccccc", bg = "#1f1f1f" },
+            Keyword = { fg = "#569cd6" }, Statement = { fg = "#c586c0" },
+            Conditional = { fg = "#c586c0" }, Repeat = { fg = "#c586c0" }, Include = { fg = "#569cd6" },
+            ["@keyword"] = { fg = "#569cd6" }, ["@keyword.function"] = { fg = "#569cd6" },
+            ["@keyword.import"] = { fg = "#569cd6" }, ["@keyword.modifier"] = { fg = "#569cd6" },
+            ["@keyword.storage"] = { fg = "#569cd6" }, ["@keyword.type"] = { fg = "#569cd6" },
+            ["@keyword.conditional"] = { fg = "#c586c0" }, ["@keyword.repeat"] = { fg = "#c586c0" },
+            ["@keyword.return"] = { fg = "#c586c0" }, ["@keyword.exception"] = { fg = "#c586c0" },
+            String = { fg = "#ce9178" }, ["@string"] = { fg = "#ce9178" }, ["@string.escape"] = { fg = "#d7ba7d" },
+            Function = { fg = "#dcdcaa" }, ["@function"] = { fg = "#dcdcaa" }, ["@function.call"] = { fg = "#dcdcaa" },
+            ["@function.method"] = { fg = "#dcdcaa" }, ["@function.method.call"] = { fg = "#dcdcaa" },
+            ["@function.macro"] = { fg = "#dcdcaa" },
+            Type = { fg = "#4ec9b0" }, ["@type"] = { fg = "#4ec9b0" }, ["@type.builtin"] = { fg = "#569cd6" },
+            ["@constructor"] = { fg = "#4ec9b0" }, ["@module"] = { fg = "#9cdcfe" },
+            Constant = { fg = "#4fc1ff" }, ["@constant"] = { fg = "#4fc1ff" },
+            Number = { fg = "#b5cea8" }, Float = { fg = "#b5cea8" }, Boolean = { fg = "#569cd6" },
+            ["@number"] = { fg = "#b5cea8" }, ["@boolean"] = { fg = "#569cd6" },
+            Comment = { fg = "#6a9955" }, ["@comment"] = { fg = "#6a9955" }, ["@comment.documentation"] = { fg = "#6a9955" },
+            ["@variable"] = { fg = "#9cdcfe" }, ["@variable.parameter"] = { fg = "#9cdcfe" },
+            ["@property"] = { fg = "#9cdcfe" }, ["@variable.member"] = { fg = "#9cdcfe" },
+            ["@variable.builtin"] = { fg = "#569cd6" }, ["@lifetime"] = { fg = "#569cd6" },
+            ["@punctuation.bracket"] = { fg = "#ffd700" }, ["@punctuation.delimiter"] = { fg = "#cccccc" },
+            ["@operator"] = { fg = "#cccccc" }, Operator = { fg = "#cccccc" },
+            ["@attribute"] = { fg = "#4ec9b0" },
+            -- โทนส้ม Claude Code (#d97757)
+            CursorLineNr = { fg = "#d97757", bg = "#282828", bold = true },
+            Visual = { bg = "#264f78" },
+            Search = { fg = "#1f1f1f", bg = "#d97757" },
+            IncSearch = { fg = "#1f1f1f", bg = "#e8a07f" },
+            PmenuSel = { bg = "#313131", bold = true },
+            BlinkCmpMenuSelection = { bg = "#3a2f29", bold = true },
+            NeoTreeDirectoryName = { fg = "#d97757", bold = true },
+            NeoTreeDirectoryIcon = { fg = "#d97757" },
+            NeoTreeRootName = { fg = "#e8a07f", bold = true },
+            BufferLineBufferSelected = { fg = "#d97757", bold = true },
+            WhichKeyNormal = { bg = "#181818" },
+            WhichKeyBorder = { fg = "#2b2b2b", bg = "#181818" },
+            WhichKeyTitle = { fg = theme.syn.fun, bg = "#181818", bold = true },
           }
         end,
       })
@@ -155,12 +191,18 @@ require("lazy").setup({
     end },
 
   -- ไฮไลต์โค้ด
-  { "nvim-treesitter/nvim-treesitter", branch = "master", build = ":TSUpdate",
+  -- branch main: master พังกับ Neovim 0.12 (error "attempt to call method 'range'"); ต้องมี tree-sitter CLI
+  { "nvim-treesitter/nvim-treesitter", branch = "main", lazy = false, build = ":TSUpdate",
     config = function()
-      require("nvim-treesitter.configs").setup({
-        ensure_installed = { "rust", "lua", "toml", "markdown", "python", "javascript", "typescript", "json", "bash", "css", "html", "tsx", "scss" },
-        highlight = { enable = true },
-        indent = { enable = true },
+      local langs = { "rust", "lua", "toml", "markdown", "python", "javascript", "typescript", "json", "bash", "css", "html", "tsx", "scss" }
+      require("nvim-treesitter").install(langs)
+      vim.api.nvim_create_autocmd("FileType", {
+        pattern = { "rust", "lua", "toml", "markdown", "python", "javascript", "typescript", "typescriptreact", "javascriptreact", "json", "sh", "bash", "css", "html", "scss" },
+        callback = function()
+          if pcall(vim.treesitter.start) then
+            vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+          end
+        end,
       })
     end },
 
@@ -181,7 +223,10 @@ require("lazy").setup({
           ["<cr>"] = "open",
           ["s"] = "open_split",
           ["v"] = "open_vsplit",
+          ["<C-n>"] = { "add", config = { show_path = "none" } }, -- ลงท้ายด้วย / = สร้างโฟลเดอร์
           ["a"] = { "add", config = { show_path = "none" } },
+          ["<F2>"] = "rename",
+          ["<Del>"] = "delete",
           ["A"] = "add_directory",
           ["d"] = "delete",
           ["r"] = "rename",
@@ -214,14 +259,34 @@ require("lazy").setup({
     dependencies = { "nvim-tree/nvim-web-devicons" },
     config = function()
       require("bufferline").setup({
+        highlights = {
+          fill = { bg = "#181818" },
+          background = { fg = "#6e7681", bg = "#181818" },
+          buffer_selected = { fg = "#e8e6dc", bg = "#1f1f1f", bold = true, italic = false },
+          buffer_visible = { fg = "#9a9890", bg = "#181818" },
+          separator = { fg = "#181818", bg = "#181818" },
+          separator_selected = { fg = "#181818", bg = "#1f1f1f" },
+          separator_visible = { fg = "#181818", bg = "#181818" },
+          indicator_selected = { fg = "#d97757", bg = "#1f1f1f" },
+          modified = { fg = "#d97757", bg = "#181818" },
+          modified_selected = { fg = "#d97757", bg = "#1f1f1f" },
+          close_button_selected = { fg = "#d97757", bg = "#1f1f1f" },
+          offset_separator = { fg = "#181818", bg = "#181818" },
+        },
         options = {
           mode = "buffers",
+          style_preset = require("bufferline").style_preset.no_italic,
+          indicator = { style = "underline" },
+          -- ซ่อนบัฟเฟอร์ไร้ชื่อ ([No Name]) ไม่ให้โผล่เป็นแท็บ
+          custom_filter = function(b)
+            return not (vim.bo[b].buftype == "" and vim.api.nvim_buf_get_name(b) == "")
+          end,
           diagnostics = "nvim_lsp",
           show_buffer_close_icons = true,
           show_buffer_icons = true,
           color_icons = true,
-          separator_style = "thin",
-          offsets = { { filetype = "neo-tree", text = "Explorer", highlight = "Directory", separator = true } },
+          separator_style = "slant",
+          offsets = { { filetype = "neo-tree", text = function() return "  " .. vim.fn.fnamemodify(vim.fn.getcwd(), ":t") end, highlight = "Directory", separator = true } },
         },
       })
     end },
@@ -234,9 +299,38 @@ require("lazy").setup({
     opts = { open_mapping = [[<C-\>]], direction = "horizontal", size = 15 } },
 
   -- แถบสถานะ + สัญลักษณ์ git
-  { "nvim-lualine/lualine.nvim", opts = { options = { theme = "auto", globalstatus = true } } },
+  -- สีโหมดชัดเจน: NORMAL ส้ม / INSERT เขียว / VISUAL ฟ้า
+  { "nvim-lualine/lualine.nvim",
+    opts = function()
+      local bg = "#1f1f1f"
+      local function mode(c) return { a = { fg = bg, bg = c, gui = "bold" }, b = { fg = c, bg = "#282828" }, c = { fg = "#c2c0b6", bg = bg } } end
+      return { sections = {
+        lualine_b = { "branch", "diagnostics" },
+        -- โฟลเดอร์โปรเจกต์ (cwd) + path ของไฟล์ที่เปิดอยู่ (relative)
+        lualine_c = {
+          { function() return "  " .. vim.fn.fnamemodify(vim.fn.getcwd(), ":t") end, color = { fg = "#d97757", gui = "bold" } },
+          { "filename", path = 1, symbols = { modified = " ●", readonly = " ", unnamed = "" } },
+        },
+      }, options = { globalstatus = true, theme = {
+        normal = mode("#d97757"), insert = mode("#8fb573"), visual = mode("#6a9bcc"),
+        replace = mode("#c15f5f"), command = mode("#e8c26b"), terminal = mode("#8fb573"),
+        inactive = mode("#6e7681"),
+      } } }
+    end },
   { "lewis6991/gitsigns.nvim", opts = {} },
   { "windwp/nvim-autopairs", event = "InsertEnter", opts = {} },
+
+  -- วงเล็บหลายสีแบบ VS Code (เหลือง / ม่วง / ฟ้า)
+  { "HiPhish/rainbow-delimiters.nvim", event = "BufReadPost",
+    config = function()
+      local hl = { RainbowDelimiterYellow = "#ffd700", RainbowDelimiterViolet = "#da70d6", RainbowDelimiterBlue = "#179fff" }
+      local function set() for g, c in pairs(hl) do vim.api.nvim_set_hl(0, g, { fg = c }) end end
+      set()
+      vim.api.nvim_create_autocmd("ColorScheme", { callback = set })
+      require("rainbow-delimiters.setup").setup({
+        highlight = { "RainbowDelimiterYellow", "RainbowDelimiterViolet", "RainbowDelimiterBlue" },
+      })
+    end },
 
   -- เมนูช่วยจำคีย์ (กด Space แล้วรอ) — แสดงเป็นแถบด้านล่างสวยงาม ไม่ลอยบังโค้ดตรงเคอร์เซอร์
   { "folke/which-key.nvim", event = "VeryLazy",
@@ -262,7 +356,8 @@ require("lazy").setup({
         { "<leader>p", desc = "Command Palette" },
         { "<leader>g", desc = "ค้นหาข้อความทั้งโปรเจกต์" },
         { "<leader>b", desc = "สลับไฟล์ (Buffers)" },
-        { "<leader>s", desc = "ค้นหา Symbols ในไฟล์" },
+        { "<leader>s", desc = "ฟังก์ชัน/คลาสในไฟล์นี้" },
+        { "<leader>sw", desc = "ฟังก์ชันทั้งโปรเจกต์ (workspace)" },
         { "<leader>fe", desc = "เปิด/ปิด File Explorer" },
         { "<leader>x", desc = "ปิดแท็บปัจจุบัน" },
         { "<leader>a", desc = "Code Action (LSP)" },
@@ -273,6 +368,19 @@ require("lazy").setup({
 
   -- Multi-cursor แบบ VS Code: Ctrl+D เลือกคำซ้ำถัดไป, Ctrl+Shift+L เลือกคำซ้ำทั้งหมด
   { "brenton-leighton/multiple-cursors.nvim", version = "*",
+    config = function(_, opts)
+      require("multiple-cursors").setup(opts)
+      -- workaround: สลับแท็บตอน multi-cursor ค้างอยู่ ปลั๊กอินลบ keymap ที่ไม่มีแล้วพ่น E31 → ให้ข้ามตัวที่ไม่มี
+      local km = require("multiple-cursors.key_maps")
+      local orig = km.delete
+      km.delete = function(...)
+        local del = vim.keymap.del
+        vim.keymap.del = function(...) pcall(del, ...) end
+        local ok, err = pcall(orig, ...)
+        vim.keymap.del = del
+        if not ok then error(err) end
+      end
+    end,
     opts = {
       custom_key_maps = {
         { { "n", "i" }, "<C-s>", function() vim.cmd("w") end },
@@ -302,19 +410,22 @@ require("lazy").setup({
   -- ป็อปอัพกรอบมน สวยแบบ VS Code ไม่ใช่สี่เหลี่ยมกลางจอ
   { "saghen/blink.cmp", version = "1.*",
     opts = {
+      fuzzy = { implementation = "prefer_rust_with_warning" },
       keymap = {
         preset = "none",
         ["<CR>"] = { "accept", "fallback" },
-        ["<C-space>"] = { "show", "show_documentation", "hide_documentation" },
-        ["<C-@>"] = { "show", "show_documentation", "hide_documentation" },
+        -- กด Ctrl+Space = เปิดเมนู suggestion (ไม่สลับปิด docs แบบ default preset)
+        ["<C-space>"] = { "show", "show_documentation", "show_signature" },
+        ["<C-@>"] = { "show", "show_documentation", "show_signature" },
         -- ไม่ใช้ Option+Space เพราะชนกับ Raycast — ใช้ Fn+F1 (<F1>), Option+i (<A-i>/ˆ), Option+. (≥) แทน
-        ["<F1>"] = { "show", "show_documentation", "hide_documentation" },
-        ["<A-i>"] = { "show", "show_documentation", "hide_documentation" },
-        ["<M-i>"] = { "show", "show_documentation", "hide_documentation" },
-        ["ˆ"] = { "show", "show_documentation", "hide_documentation" },
-        ["<A-.>"] = { "show", "show_documentation", "hide_documentation" },
-        ["<M-.>"] = { "show", "show_documentation", "hide_documentation" },
-        ["≥"] = { "show", "show_documentation", "hide_documentation" },
+        ["<F1>"] = { "show", "show_documentation", "show_signature" },
+        ["<A-i>"] = { "show", "show_documentation", "show_signature" },
+        ["<M-i>"] = { "show", "show_documentation", "show_signature" },
+        ["ˆ"] = { "show", "show_documentation", "show_signature" },
+        ["<A-.>"] = { "show", "show_documentation", "show_signature" },
+        ["<M-.>"] = { "show", "show_documentation", "show_signature" },
+        ["≥"] = { "show", "show_documentation", "show_signature" },
+        ["<C-k>"] = { "show_signature", "hide_signature", "fallback" },
         ["<Down>"] = { "select_next", "fallback" },
         ["<Up>"] = { "select_prev", "fallback" },
         ["<C-n>"] = { "select_next", "fallback" },
@@ -326,23 +437,39 @@ require("lazy").setup({
       },
       sources = {
         default = { "lsp", "path", "snippets", "buffer" },  -- lsp = suggestion ตามภาษา (ts_ls, rust_analyzer ฯลฯ)
+        providers = {
+          lsp = {
+            -- กด Ctrl+Space แม้ยังไม่พิมพ์คำ → ยังโชว์รายการ method/function ได้
+            min_keyword_length = function(ctx)
+              return ctx.trigger.kind == "manual" and 0 or 1
+            end,
+          },
+        },
       },
       completion = {
         ghost_text = { enabled = false },   -- ให้ Supermaven เป็นคนแสดง ghost text
         documentation = { auto_show = true },
+        trigger = {
+          show_on_trigger_character = true,
+          show_on_insert_on_trigger_character = true,
+          show_in_snippet = true,
+        },
         menu = {
+          auto_show = true,
+          auto_show_delay_ms = 150,
           border = "rounded",      -- กรอบมน
           winhighlight = "Normal:BlinkCmpMenu,FloatBorder:BlinkCmpMenuBorder,CursorLine:BlinkCmpMenuSelection,Search:None",
-          max_height = 20,
+          max_height = 24,
           max_width = 100,
           min_width = 40,
           padding = 1,
           draw = {
             padding = 1,
             gap = 1,
+            treesitter_lsp = true,
           },
         },
-        list = { max_items = 20 },
+        list = { max_items = 50, cycle = { from_top = true, from_bottom = true } },
       },
       -- เมนู Auto-complete / Suggestion ตอนพิมพ์คำสั่ง : (เช่น :qa, :w, :Lazy) เด้งขึ้นมาให้เลือกอัตโนมัติ
       cmdline = {
@@ -366,6 +493,8 @@ require("lazy").setup({
           },
           menu = {
             auto_show = function(_ctx)
+              -- ไม่โชว์เมนูเมื่อพิมพ์ :! (shell) — เมนูจะค้างทับผลลัพธ์คำสั่ง
+              if vim.fn.getcmdline():match("^%s*!") then return false end
               return vim.fn.getcmdtype() == ":" or vim.fn.getcmdtype() == "/" or vim.fn.getcmdtype() == "?"
             end,
           },
@@ -443,7 +572,25 @@ vim.lsp.config("ts_ls", {
   filetypes = { "javascript", "typescript", "javascriptreact", "typescriptreact" },
   root_markers = { "package.json", "tsconfig.json", ".git" },
 })
-for _, srv in ipairs({ "cssls", "tailwindcss", "html", "ts_ls" }) do
+vim.lsp.config("lua_ls", {
+  cmd = { "lua-language-server" },
+  filetypes = { "lua" },
+  root_markers = { ".luarc.json", ".luacheckrc", ".git" },
+  settings = {
+    Lua = {
+      workspace = { checkThirdParty = false },
+      telemetry = { enable = false },
+      completion = { callSnippet = "Both", keywordSnippet = "Both" },
+    },
+  },
+})
+vim.lsp.config("pyright", {
+  cmd = { "pyright-langserver", "--stdio" },
+  filetypes = { "python" },
+  root_markers = { "pyproject.toml", "setup.py", "setup.cfg", "requirements.txt", ".git" },
+  settings = { python = { analysis = { typeCheckingMode = "basic", autoSearchPaths = true, useLibraryCodeForTypes = true } } },
+})
+for _, srv in ipairs({ "cssls", "tailwindcss", "html", "ts_ls", "lua_ls", "pyright" }) do
   local ok, _ = pcall(vim.lsp.enable, srv)
   if not ok then
     vim.notify("LSP '" .. srv .. "' ยังไม่พร้อม ให้รัน: npx --yes vscode-langservers --stdio", vim.log.levels.WARN)
@@ -561,37 +708,34 @@ local fzf = function(fn) return function() require("fzf-lua")[fn]() end end
 --   2) Option + i (⌥ + i = IntelliSense / Info)
 --   3) Option + . (⌥ + . เหมือน VS Code)
 --   4) Space + Space (เคาะ Space 2 ครั้งในโหมดปกติ)
-local function trigger_code_suggestion()
+local function blink_suggest()
   local ok, blink = pcall(require, "blink.cmp")
-  if vim.fn.mode() ~= "i" then
-    local clients = vim.lsp.get_clients({ bufnr = 0 })
-    if #clients > 0 then
-      vim.lsp.buf.hover()
-      return
-    end
-    vim.cmd("startinsert")
-  end
-  if ok then
-    vim.schedule(function()
-      blink.show()
-      blink.show_documentation()
-      blink.show_signature()
-    end)
-  end
+  if not ok then return end
+  vim.schedule(function()
+    blink.show()
+    blink.show_documentation()
+    blink.show_signature()
+  end)
 end
 
-map("n", "<leader><space>", trigger_code_suggestion, { desc = "โชว์ข้อมูลโค้ด / Suggestion" })
-for _, k in ipairs({ "<F1>", "<A-i>", "<M-i>", "ˆ", "<A-ร>", "<M-ร>", "<A-.>", "<M-.>", "≥", "<C-Space>", "<C-@>" }) do
-  map("n", k, trigger_code_suggestion, { desc = "โชว์ข้อมูลโค้ด / Suggestion" })
-  map("i", k, function()
-    local ok, blink = pcall(require, "blink.cmp")
-    if ok then
-      blink.show()
-      blink.show_documentation()
-      blink.show_signature()
-    end
-  end, { desc = "โชว์เมนู Suggestion ของโค้ด" })
+-- โหมด Normal: Ctrl+Space → เข้า Insert แล้วเปิดเมนู suggestion ของ LSP
+local function trigger_code_suggestion()
+  if vim.fn.mode() == "i" then
+    blink_suggest()
+    return
+  end
+  if vim.fn.mode() == "n" then
+    vim.cmd("startinsert!")
+  end
+  blink_suggest()
 end
+
+map("n", "<leader><space>", trigger_code_suggestion, { desc = "Suggestion / IntelliSense (Ctrl+Space)" })
+for _, k in ipairs({ "<F1>", "<A-i>", "<M-i>", "ˆ", "<A-ร>", "<M-ร>", "<A-.>", "<M-.>", "≥", "<C-Space>", "<C-@>" }) do
+  map("n", k, trigger_code_suggestion, { desc = "Suggestion / IntelliSense" })
+end
+-- Insert: ใช้ keymap ของ blink.cmp เป็นหลัก (ไม่ซ้ำซ้อนกับ mapping ข้างบน)
+map("i", "<F1>", blink_suggest, { desc = "Suggestion (สำรองถ้า Ctrl+Space ถูก IME ดัก)" })
 
 -- บันทึก / undo / redo / เลือกทั้งหมด
 map({ "n", "v" }, "<C-s>", "<cmd>w<cr>", { desc = "บันทึก" })
@@ -622,7 +766,8 @@ end, { desc = "ค้นหาไฟล์" })
 map("n", "<leader>p", fzf("commands"), { desc = "command palette" })
 map("n", "<leader>g", fzf("live_grep"), { desc = "ค้นหาข้อความทั้งโปรเจกต์" })
 map("n", "<leader>b", fzf("buffers"), { desc = "buffers" })
-map("n", "<leader>s", fzf("lsp_document_symbols"), { desc = "symbols ในไฟล์" })
+map("n", "<leader>s", fzf("lsp_document_symbols"), { desc = "ฟังก์ชัน/คลาสในไฟล์นี้" })
+map("n", "<leader>sw", fzf("lsp_live_workspace_symbols"), { desc = "ค้นหาฟังก์ชันทั้งโปรเจกต์" })
 
 -- file explorer / terminal / แท็บ
 map({ "n", "i" }, "<C-b>", "<cmd>Neotree toggle position=left<cr>", { desc = "เปิด/ปิด Explorer" })
@@ -700,6 +845,102 @@ for _, arrow in ipairs({ "<Left>", "<Right>", "<Up>", "<Down>" }) do
 end
 
 map("n", "<esc>", "<cmd>nohlsearch<cr>")
+
+-- ===== หน้าเริ่มต้น (แทน [No Name]) : แสดงเมื่อเปิด nvim เปล่าๆ ไม่มีไฟล์ =====
+vim.api.nvim_create_autocmd("VimEnter", {
+  callback = function()
+    if vim.fn.argc() > 0 or vim.api.nvim_buf_get_name(0) ~= "" or vim.api.nvim_buf_line_count(0) > 1 then return end
+    local lines = {
+      "███╗   ██╗██╗   ██╗██╗███╗   ███╗",
+      "████╗  ██║██║   ██║██║████╗ ████║",
+      "██╔██╗ ██║██║   ██║██║██╔████╔██║",
+      "██║╚██╗██║╚██╗ ██╔╝██║██║╚██╔╝██║",
+      "██║ ╚████║ ╚████╔╝ ██║██║ ╚═╝ ██║",
+      "╚═╝  ╚═══╝  ╚═══╝  ╚═╝╚═╝     ╚═╝",
+      "",
+      "Get started with 4 keys",
+      "",
+      "Ctrl+N     New file",
+      "Ctrl+P     Find file",
+      "Ctrl+B     File explorer",
+      "Space g    Search in project",
+    }
+    local old = vim.api.nvim_get_current_buf()
+    local buf = vim.api.nvim_create_buf(false, true)
+    local pad_top = math.max(0, math.floor((vim.o.lines - #lines) / 2) - 1)
+    local out = {}
+    for _ = 1, pad_top do out[#out + 1] = "" end
+    local ns = vim.api.nvim_create_namespace("start")
+    -- ทุกบรรทัดชิดซ้ายที่คอลัมน์เดียวกัน (บล็อกรวมอยู่กลางจอ แต่ข้อความไม่จัดกึ่งกลางทีละบรรทัด)
+    local maxw = 0
+    for _, l in ipairs(lines) do maxw = math.max(maxw, vim.fn.strdisplaywidth(l)) end
+    local pad = string.rep(" ", math.max(0, math.floor((vim.o.columns - maxw) / 2)))
+    for _, l in ipairs(lines) do out[#out + 1] = pad .. l end
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, out)
+    vim.api.nvim_set_hl(0, "StartLogo", { fg = "#d97757", bold = true })
+    vim.api.nvim_set_hl(0, "StartKey", { fg = "#1f1f1f", bg = "#d97757", bold = true })
+    vim.api.nvim_set_hl(0, "StartDim", { fg = "#6e7681" })
+    for i = 1, #lines do
+      local row = pad_top + i - 1
+      local group = i <= 6 and "StartLogo" or (i == 8 and "StartDim")
+      if group then vim.api.nvim_buf_add_highlight(buf, ns, group, row, 0, -1) end
+      if i >= 10 then -- ไฮไลต์ส่วนชื่อปุ่ม
+        local s = out[row + 1]:find("%S")
+        local key = lines[i]:match("^(%S+%s?%S*)%s%s") -- "Ctrl+N" / "Space g"
+        vim.api.nvim_buf_set_extmark(buf, ns, row, s - 1, { end_col = s - 1 + #key, hl_group = "StartKey" })
+      end
+    end
+    vim.bo[buf].bufhidden, vim.bo[buf].modifiable, vim.bo[buf].filetype = "wipe", false, "start"
+    vim.api.nvim_win_set_buf(0, buf)
+    vim.api.nvim_buf_delete(old, { force = true }) -- ลบ [No Name] เดิม ไม่ให้โผล่เป็นแท็บ
+    for _, opt in ipairs({ "number", "cursorline", "list" }) do vim.wo[opt] = false end
+    vim.wo.signcolumn = "no"
+  end,
+})
+
+-- ตั้งค่าหน้าต่างตามบัฟเฟอร์ที่แสดงอยู่ทุกครั้ง (รวม split/ย้ายบัฟเฟอร์)
+-- หน้า start = ไม่มีเลขบรรทัด; ไฟล์ปกติ = มีเลขบรรทัดเสมอ (กัน option หน้า start ติดไปที่ window อื่น)
+vim.api.nvim_create_autocmd({ "BufWinEnter", "WinEnter" }, {
+  callback = function()
+    local start = vim.bo.filetype == "start"
+    if not start and vim.bo.buftype ~= "" then return end
+    vim.wo.number, vim.wo.cursorline = not start, not start
+    vim.wo.signcolumn = start and "no" or "yes"
+  end,
+})
+
+-- ปิดเมนู completion ทุกครั้งที่ออกจาก : (กันหน้าต่างลอยค้างทับหน้าจอ)
+vim.api.nvim_create_autocmd("CmdlineLeave", {
+  callback = function() pcall(function() require("blink.cmp").hide() end) end,
+})
+
+-- ===== สลับโหมดง่ายๆ =====
+-- jk (หรือ ่า บนแป้นไทย) ใน Insert = กลับ Normal; Esc Esc ออกจาก terminal
+vim.keymap.set("i", "jk", "<Esc>")
+vim.keymap.set("i", "่า", "<Esc>")
+vim.keymap.set("t", "<Esc><Esc>", [[<C-\><C-n>]])
+-- Shift+ลูกศร = เลือกแบบ VS Code (Select mode), Ctrl+G สลับ Select<->Visual, v/V เลือก, i/a พิมพ์
+-- เคอร์เซอร์เปลี่ยนรูปตามโหมด: Normal=บล็อก, Insert=เส้นตั้ง
+vim.o.guicursor = "n-c:block,i-ci-ve:ver25,r-cr-o:hor20,v-sm:block-blinkon500-blinkoff300"
+
+-- Ctrl+N: สร้างไฟล์ใหม่ (พิมพ์ชื่อ เช่น src/a.lua; ลงท้าย / = โฟลเดอร์) ในโฟลเดอร์ของไฟล์ปัจจุบัน
+-- ใน Explorer ใช้ Ctrl+N ของ neo-tree แทน (สร้างในโฟลเดอร์ที่เลือก)
+local function new_file()
+  local cur = vim.api.nvim_buf_get_name(0)
+  local dir = (cur ~= "" and vim.bo.buftype == "") and vim.fn.fnamemodify(cur, ":p:h") or vim.fn.getcwd()
+  vim.ui.input({ prompt = "ไฟล์ใหม่ใน " .. vim.fn.fnamemodify(dir, ":~:.") .. "/ : ", completion = "file" }, function(name)
+    if not name or name == "" then return end
+    local path = vim.fs.normalize(dir .. "/" .. name)
+    if name:sub(-1) == "/" then
+      vim.fn.mkdir(path, "p")
+      return vim.notify("สร้างโฟลเดอร์ " .. path)
+    end
+    vim.fn.mkdir(vim.fs.dirname(path), "p")
+    vim.cmd.edit(vim.fn.fnameescape(path))
+    vim.cmd("silent! write")
+  end)
+end
+map({ "n", "i" }, "<C-n>", function() vim.cmd("stopinsert"); new_file() end, { desc = "สร้างไฟล์ใหม่" })
 
 -- Shift+Delete ลบบรรทัดทั้งบรรทัด (แบบ VS Code) + Ctrl+Shift+K สำรอง
 -- (บาง terminal ดัก Shift+Delete ไว้เป็น Cut เอง ถ้าไม่ติดให้ใช้ Ctrl+Shift+K แทน)
