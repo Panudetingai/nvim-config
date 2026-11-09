@@ -966,3 +966,69 @@ vim.api.nvim_create_user_command("CargoCheck", function()
     vim.cmd("call term_sendkeys(bufnr('%'), 'cargo check\\<CR>')")
   end
 end, { desc = "cargo check" })
+
+-- ===== Sync popup (macOS): ถาม commit + push config ขึ้น GitHub ตอนเปิด nvim =====
+-- ทำงานเฉพาะ macOS และเฉพาะเมื่อโฟลเดอร์ config เป็น git repo ที่มี remote
+-- ถ้ามีไฟล์ค้าง (แก้แล้วยังไม่ commit) หรือ commit ค้าง (ยังไม่ push) จะเด้ง popup ถามตอนเปิด nvim
+-- ปิดฟีเจอร์นี้ชั่วคราว: ใส่ `vim.g.sync_popup = false` ใน init.lua ก่อนบรรทัดนี้
+-- รันเองเมื่อไหร่ก็ได้ด้วย :NvimSync
+local function git_sync_out(dir, args)
+  local cmd = { "git", "-C", dir }
+  vim.list_extend(cmd, args)
+  local ok, lines = pcall(vim.fn.systemlist, cmd)
+  if not ok or vim.v.shell_error ~= 0 then return nil end
+  return lines
+end
+
+local function nvim_config_sync_check()
+  if vim.g.sync_popup == false then return end
+  if vim.fn.has("mac") ~= 1 then return end
+  local dir = vim.fn.stdpath("config")
+  if not git_sync_out(dir, { "rev-parse", "--is-inside-work-tree" }) then return end
+  if not git_sync_out(dir, { "remote", "get-url", "origin" }) then return end
+
+  local dirty = git_sync_out(dir, { "status", "--porcelain" }) or {}
+  local sb = (git_sync_out(dir, { "status", "-sb" }) or {})[1] or ""
+  local ahead = tonumber(sb:match("ahead (%d+)")) or 0
+  if #dirty == 0 and ahead == 0 then return end
+
+  local parts = {}
+  if #dirty > 0 then parts[#parts + 1] = ("ไฟล์ค้าง %d ไฟล์"):format(#dirty) end
+  if ahead > 0 then parts[#parts + 1] = ("commit ค้าง %d ตัว"):format(ahead) end
+
+  local choice = vim.fn.confirm(
+    ("Config มีของค้าง (%s) — sync ขึ้น GitHub ไหม?"):format(table.concat(parts, ", ")),
+    "&Commit + Push\n&ภายหลัง"
+  )
+  if choice ~= 1 then return end
+
+  local function do_push()
+    local out = git_sync_out(dir, { "push", "origin" })
+    vim.notify(out and "Sync config ขึ้น GitHub เรียบร้อย" or "Push ไม่สำเร็จ — ดูรายละเอียดด้วย :!git -C " .. dir .. " push",
+      out and vim.log.levels.INFO or vim.log.levels.ERROR, { title = "nvim sync" })
+  end
+
+  if #dirty == 0 then
+    do_push()
+    return
+  end
+  vim.ui.input({ prompt = "ข้อความ commit: ", default = "chore: update nvim config" }, function(msg)
+    if not msg or msg == "" then return end -- ยกเลิก ไม่ sync รอบนี้
+    git_sync_out(dir, { "add", "-A" })
+    local commit_out = git_sync_out(dir, { "commit", "-m", msg })
+    if not commit_out then
+      vim.notify("Commit ไม่สำเร็จ — ดูรายละเอียดด้วย :!git -C " .. dir .. " status",
+        vim.log.levels.ERROR, { title = "nvim sync" })
+      return
+    end
+    do_push()
+  end)
+end
+
+vim.api.nvim_create_user_command("NvimSync", nvim_config_sync_check, { desc = "sync nvim config ขึ้น GitHub" })
+if vim.fn.has("mac") == 1 then
+  vim.api.nvim_create_autocmd("VimEnter", {
+    once = true,
+    callback = function() vim.defer_fn(nvim_config_sync_check, 1000) end,
+  })
+end
