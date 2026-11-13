@@ -605,7 +605,7 @@ require("lazy").setup({
       end
     end },
 
-  -- เมนู autocomplete จาก LSP (Enter เพื่อยืนยัน) ไม่ใช้ Tab เพื่อไม่ให้ชนกับ Supermaven
+  -- เมนู autocomplete: Tab/ลูกศรเลือกรายการ (แบบ VS Code), Enter ยืนยัน — Supermaven ย้ายไป Ctrl+Tab
   -- ป็อปอัพกรอบมน สวยแบบ VS Code ไม่ใช่สี่เหลี่ยมกลางจอ
   { "saghen/blink.cmp", version = "1.*",
     opts = {
@@ -629,11 +629,14 @@ require("lazy").setup({
         ["<M-.>"] = { "show", "show_documentation", "show_signature" },
         ["≥"] = { "show", "show_documentation", "show_signature" },
         ["<C-k>"] = { "show_signature", "hide_signature", "fallback" },
+        ["<Tab>"] = { "select_next", "snippet_forward", "fallback" },
         ["<Down>"] = { "select_next", "fallback" },
         ["<Up>"] = { "select_prev", "fallback" },
+        ["<Right>"] = { "select_next", "fallback" },
+        ["<Left>"] = { "select_prev", "fallback" },
         ["<C-n>"] = { "select_next", "fallback" },
         -- ห้ามใช้ <C-p> ที่นี่ — จะไปชนกับ Quick open (fzf-lua files) แบบ VS Code
-        ["<S-Tab>"] = { "select_prev", "fallback" },
+        ["<S-Tab>"] = { "select_prev", "snippet_backward", "fallback" },
         ["<C-e>"] = { "hide", "fallback" },
         -- Esc ในโหมดพิมพ์: ปิดเมนูก่อน แล้วค่อยออกจากโหมดพิมพ์ (เดิมไม่มีปุ่มปิดโดยตรง เมนูเลยค้าง)
         ["<Esc>"] = { "hide", "fallback" },
@@ -674,7 +677,11 @@ require("lazy").setup({
             treesitter_lsp = true,
           },
         },
-        list = { max_items = 50, cycle = { from_top = true, from_bottom = true } },
+        list = {
+          max_items = 50,
+          cycle = { from_top = true, from_bottom = true },
+          selection = { preselect = true, auto_insert = false },
+        },
         accept = { create_undo_point = true },
       },
       -- เมนู Auto-complete / Suggestion ตอนพิมพ์คำสั่ง : (เช่น :qa, :w, :Lazy) เด้งขึ้นมาให้เลือกอัตโนมัติ
@@ -712,14 +719,14 @@ require("lazy").setup({
       signature = { enabled = true, window = { border = "rounded" } },
     } },
 
-  -- Supermaven: AI autocomplete (กด Tab รับคำแนะนำ เหมือน Cursor)
+  -- Supermaven: AI autocomplete (Ctrl+Tab รับคำแนะนำ — Tab ให้ blink เลือกรายการ LSP)
   -- ครั้งแรกรัน :SupermavenUseFree แล้วทำตามลิงก์ที่ขึ้นมาเพื่อล็อกอิน
   { "supermaven-inc/supermaven-nvim",
     lazy = false, -- โหลดตั้งแต่เริ่ม: สี ghost text ไม่หลุดเมื่อ lazy load (ดู README ปลั๊กอิน)
     config = function()
       require("supermaven-nvim").setup({
         keymaps = {
-          accept_suggestion = "<Tab>",
+          accept_suggestion = "<C-Tab>",
           clear_suggestion = "<C-]>",
           accept_word = "<C-j>",
         },
@@ -1350,6 +1357,9 @@ vim.api.nvim_create_user_command("Keys", function()
     "  Space i a     import อัตโนมัติ (ถ้าอยากให้ LSP เดา)",
     "  Space o i     จัดเรียง import",
     "  F1 / Ctrl+Space  เมนู suggestion",
+    "  Tab / ↓ / ↑     เลือกรายการ autocomplete",
+    "  Enter           ยืนยันรายการที่เลือก",
+    "  Ctrl+Tab        รับคำแนะนำ Supermaven (AI)",
     "",
     "พิมพ์ตัวย่อแล้ว Enter (Snippet)",
     "  rafce         React component (export)",
