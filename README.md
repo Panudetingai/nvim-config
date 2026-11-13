@@ -196,7 +196,7 @@ npm install -g typescript typescript-language-server vscode-langservers-extracte
 | `Ctrl + J` | รับ AI Suggestion ทีละคำ (Supermaven Accept Word) |
 | `Ctrl + ]` | ล้าง AI Suggestion ที่แสดงอยู่ |
 | `Enter` | ยืนยันรายการจากเมนู Autocomplete (`blink.cmp`) |
-| `Space + Space` / `Option + i` / `F1` | ดูเอกสารโค้ด (Hover) หรือเปิดเมนู Suggestion |
+| `Option + i` / `F1` / `Ctrl + Space` | ดูเอกสารโค้ด (Hover) หรือเปิดเมนู Suggestion |
 | `gd` / `F12` / `Ctrl + Click` | ไปที่ Definition |
 | `gr` | ค้นหา References ทั้งหมด |
 | `K` | ดู Hover Documentation |
