@@ -403,7 +403,8 @@ require("lazy").setup({
       for _, s in ipairs({ "pwsh", "C:/Program Files/Git/bin/bash.exe", "powershell" }) do
         if vim.fn.executable(s) == 1 then shell = s; break end
       end
-      return { open_mapping = [[<C-\>]], direction = "horizontal", size = 15, shell = shell or vim.o.shell }
+      -- Ctrl+\ ยกให้ "แบ่งหน้าจอ" แล้ว (แบบ VS Code) — terminal ในตัวเปิดด้วย Alt+T หรือ Space t
+      return { open_mapping = [[<A-t>]], direction = "horizontal", size = 15, shell = shell or vim.o.shell }
     end },
 
   -- แถบสถานะ + สัญลักษณ์ git
@@ -475,6 +476,9 @@ require("lazy").setup({
         { "<C-f>", desc = "ค้นหาในไฟล์นี้ (แบบ VS Code)" },
         { "<C-S-f>", desc = "ค้นหาข้อความทั้งโปรเจกต์ (แบบ VS Code)" },
         { "<leader>a", desc = "Code Action (LSP)" },
+        { "<leader>i", desc = "เลือก import (เมนู)" },
+        { "<leader>ia", desc = "import อัตโนมัติ (เดา module)" },
+        { "<leader>oi", desc = "จัดเรียง import" },
         { "<leader>df", desc = "ดูรายละเอียด Error" },
         { "<leader>F", desc = "จัดรูปแบบโค้ด (Format)" },
         { "<leader>?", desc = "แสดงเมนูปุ่มลัดทั้งหมด" },
@@ -671,6 +675,7 @@ require("lazy").setup({
           },
         },
         list = { max_items = 50, cycle = { from_top = true, from_bottom = true } },
+        accept = { create_undo_point = true },
       },
       -- เมนู Auto-complete / Suggestion ตอนพิมพ์คำสั่ง : (เช่น :qa, :w, :Lazy) เด้งขึ้นมาให้เลือกอัตโนมัติ
       cmdline = {
@@ -767,6 +772,8 @@ vim.lsp.config("rust_analyzer", {
     ["rust-analyzer"] = {
       check = { command = "clippy" },
       cargo = { allFeatures = true },
+      completion = { autoimport = { enable = true } },
+      imports = { granularity = { group = "module" }, prefix = "self" },
     },
   },
 })
@@ -775,8 +782,39 @@ vim.lsp.enable("rust_analyzer")
 -- ===== LSP เจาะจงไฟล์ Tailwind (globals.css) =====
 -- ใช้ npx โหลด server อัตโนมัติตอนเปิดไฟล์ครั้งแรก (ไม่ต้องติดตั้งเอง) — package ชื่อ vscode-langservers-extracted
 -- เดิมใช้ชื่อ vscode-langservers ซึ่งไม่มีใน npm (404) ทำให้ cssls แครชทุกครั้ง
+-- Windows: npm .cmd ใน PATH มักมีแต่ shim แพ็กเกจพังแล้วยัง executable()=1 → รันแล้ว cssls ตาย
+-- ใช้ node + entry .js ถ้ามีจริง ไม่งั้น npx (อย่าเรียก exepath(.cmd) ตรงๆ)
+local NPM_LSP_ENTRY = {
+  ["vscode-css-language-server"] = { "vscode-langservers-extracted", "bin/vscode-css-language-server" },
+  ["vscode-html-language-server"] = { "vscode-langservers-extracted", "bin/vscode-html-language-server" },
+  ["tailwindcss-language-server"] = { "@tailwindcss/language-server", "bin/tailwindcss-language-server" },
+}
+local function node_exe()
+  local n = vim.fn.exepath("node")
+  if n ~= "" then return n end
+  -- shortcut: terminal/GUI เปิด nvim โดยไม่มี node ใน PATH, upgrade เมื่อ node อยู่ที่อื่น
+  local guess = "C:/Program Files/nodejs/node.exe"
+  return vim.uv.fs_stat(guess) and guess or nil
+end
+local function npm_global_js_cmd(bin)
+  local spec = NPM_LSP_ENTRY[bin]
+  if not spec or vim.fn.has("win32") ~= 1 then return nil end
+  local js = vim.fs.normalize((vim.env.APPDATA or "") .. "/npm/node_modules/" .. spec[1] .. "/" .. spec[2])
+  if not vim.uv.fs_stat(js) then return nil end
+  local node = node_exe()
+  if not node then return nil end
+  return { node, js, "--stdio" }
+end
+local function lsp_bin(bin, pkg)
+  local cmd = npm_global_js_cmd(bin)
+  if cmd then return cmd end
+  if vim.fn.has("win32") ~= 1 and vim.fn.executable(bin) == 1 then
+    return { vim.fn.exepath(bin), "--stdio" }
+  end
+  return { "npx", "--yes", "-p", pkg, bin, "--stdio" }
+end
 vim.lsp.config("cssls", {
-  cmd = { "npx", "--yes", "-p", "vscode-langservers-extracted", "vscode-css-language-server", "--stdio" },
+  cmd = lsp_bin("vscode-css-language-server", "vscode-langservers-extracted"),
   filetypes = { "css", "scss", "less" },
   root_markers = { "package.json", "bun.lock", "bun.lockb", ".git" },
   settings = {
@@ -787,7 +825,7 @@ vim.lsp.config("cssls", {
 })
 vim.lsp.config("tailwindcss", {
   -- ตัวจริงชื่อ @tailwindcss/language-server (ชื่อ tailwindcss-language-server บน npm เป็นแพ็กเกจว่าง 0.0.1 ไม่มี autocomplete)
-  cmd = { "npx", "--yes", "-p", "@tailwindcss/language-server", "tailwindcss-language-server", "--stdio" },
+  cmd = lsp_bin("tailwindcss-language-server", "@tailwindcss/language-server"),
   filetypes = { "css", "scss", "less", "html", "javascript", "typescript", "javascriptreact", "typescriptreact" },
   root_markers = { "package.json", "bun.lock", "bun.lockb", "tailwind.config.js", "tailwind.config.ts", "postcss.config.js", ".git" },
   settings = {
@@ -795,14 +833,46 @@ vim.lsp.config("tailwindcss", {
   },
 })
 vim.lsp.config("html", {
-  cmd = { "npx", "--yes", "-p", "vscode-langservers-extracted", "vscode-html-language-server", "--stdio" },
+  cmd = lsp_bin("vscode-html-language-server", "vscode-langservers-extracted"),
   filetypes = { "html", "erb" },
   root_markers = { "package.json", "bun.lock", "bun.lockb", ".git" },
 })
 vim.lsp.config("ts_ls", {
-  cmd = { "npx", "--yes", "typescript-language-server", "--stdio" },
+  -- ใช้ตัวที่ติดตั้งแบบ global (npm i -g typescript typescript-language-server) ก่อน — npx บน Windows หา bin ไม่เจอ
+  cmd = vim.fn.executable("typescript-language-server") == 1
+      and { vim.fn.exepath("typescript-language-server"), "--stdio" }
+      or { "npx", "--yes", "-p", "typescript-language-server", "-p", "typescript", "typescript-language-server", "--stdio" },
   filetypes = { "javascript", "typescript", "javascriptreact", "typescriptreact" },
   root_markers = { "package.json", "bun.lock", "bun.lockb", "tsconfig.json", ".git" },
+  -- โปรเจกต์ที่ไม่มี typescript ติดตั้งเอง → ใช้ตัว global (npm i -g typescript)
+  init_options = (function()
+    local npm_root = vim.fn.has("win32") == 1 and (vim.env.APPDATA or "") .. "/npm/node_modules" or "/usr/local/lib/node_modules"
+    local tsserver = vim.fs.normalize(vim.fs.joinpath(npm_root, "typescript/lib/tsserver.js"))
+    if vim.uv.fs_stat(tsserver) then return { tsserver = { path = tsserver } } end
+    return {}
+  end)(),
+  -- เมนู completion โชว์หลาย module ให้เลือก; import จริงตอน Enter ตามรายการที่เลือก (ไม่ใช้ fixAll ยัดให้)
+  settings = {
+    typescript = {
+      suggest = { autoImports = true, completeFunctionCalls = false },
+      preferences = {
+        includeCompletionsForModuleExports = true,
+        includeCompletionsWithInsertText = true,
+        -- ไม่บังคับเส้นทาง import ให้ LSP เดาเอง — เลือกจาก quickfix / เมนู completion แทน
+        importModuleSpecifierPreference = "non-relative",
+      },
+      updateImportsOnFileMove = { enabled = "always" },
+    },
+    javascript = {
+      suggest = { autoImports = true, completeFunctionCalls = false },
+      preferences = {
+        includeCompletionsForModuleExports = true,
+        includeCompletionsWithInsertText = true,
+        importModuleSpecifierPreference = "non-relative",
+      },
+      updateImportsOnFileMove = { enabled = "always" },
+    },
+  },
 })
 vim.lsp.config("lua_ls", {
   cmd = { "lua-language-server" },
@@ -812,7 +882,7 @@ vim.lsp.config("lua_ls", {
     Lua = {
       workspace = { checkThirdParty = false },
       telemetry = { enable = false },
-      completion = { callSnippet = "Both", keywordSnippet = "Both" },
+      completion = { callSnippet = "Both", keywordSnippet = "Both", autoRequire = false },
     },
   },
 })
@@ -820,12 +890,21 @@ vim.lsp.config("pyright", {
   cmd = { "pyright-langserver", "--stdio" },
   filetypes = { "python" },
   root_markers = { "pyproject.toml", "setup.py", "setup.cfg", "requirements.txt", ".git" },
-  settings = { python = { analysis = { typeCheckingMode = "basic", autoSearchPaths = true, useLibraryCodeForTypes = true } } },
+  settings = {
+    python = {
+      analysis = {
+        typeCheckingMode = "basic",
+        autoSearchPaths = true,
+        useLibraryCodeForTypes = true,
+        autoImportCompletions = true,
+      },
+    },
+  },
 })
 for _, srv in ipairs({ "cssls", "tailwindcss", "html", "ts_ls", "lua_ls", "pyright" }) do
   local ok, _ = pcall(vim.lsp.enable, srv)
   if not ok then
-    vim.notify("LSP '" .. srv .. "' ยังไม่พร้อม ให้รัน: npx --yes vscode-langservers --stdio", vim.log.levels.WARN)
+    vim.notify("LSP '" .. srv .. "' ยังไม่พร้อม ให้รัน: npm i -g vscode-langservers-extracted --ignore-scripts", vim.log.levels.WARN)
   end
 end
 
@@ -912,6 +991,73 @@ local function map(modes, lhs, rhs, opts)
   end
 end
 
+-- ===== Import: เลือกแหล่ง import เอง (ไม่ยัดให้อัตโนมัติ) =====
+vim.g.auto_import_on_save = false
+local auto_import_fts = {
+  javascript = true, typescript = true, javascriptreact = true, typescriptreact = true,
+  python = true, rust = true, lua = true,
+}
+-- ไม่ใช้ fixAll — LSP มักเลือก module ผิด; ให้เลือกจากรายการ quickfix แทน
+local import_choose_only = {
+  "source.addMissingImports", "source.addMissingImports.ts", "source.addMissingImports.js",
+  "quickfix",
+}
+local import_auto_only = {
+  "source.fixAll", "source.fixAll.typescript", "source.fixAll.javascript",
+  "source.addMissingImports", "source.addMissingImports.ts", "source.addMissingImports.js",
+}
+local organize_imports_only = {
+  "source.organizeImports", "source.organizeImports.ts", "source.organizeImports.js",
+  "source.removeUnused", "source.removeUnusedImports", "source.removeUnused.ts", "source.removeUnused.js",
+}
+local function lsp_import_context(only)
+  return { diagnostics = vim.diagnostic.get(0), only = only }
+end
+local function lsp_import_choose()
+  if #vim.lsp.get_clients({ bufnr = 0 }) == 0 then
+    vim.notify("ไม่มี LSP — เปิดจากโฟลเดอร์โปรเจกต์ (package.json / tsconfig) ก่อน", vim.log.levels.INFO, { title = "Import" })
+    return
+  end
+  local ctx = lsp_import_context(import_choose_only)
+  local ok = pcall(require("fzf-lua").lsp_code_actions, {
+    context = ctx,
+    prompt = "เลือก import > ",
+    silent = true,
+  })
+  if not ok then
+    vim.lsp.buf.code_action({ context = ctx })
+  end
+end
+local function lsp_import_auto()
+  if #vim.lsp.get_clients({ bufnr = 0 }) == 0 then return end
+  pcall(vim.lsp.buf.code_action, {
+    apply = true,
+    context = lsp_import_context(import_auto_only),
+  })
+end
+local function lsp_organize_imports()
+  if #vim.lsp.get_clients({ bufnr = 0 }) == 0 then return end
+  pcall(vim.lsp.buf.code_action, { apply = true, context = { only = organize_imports_only } })
+end
+local function auto_import_before_save(buf)
+  if not vim.g.auto_import_on_save or not auto_import_fts[vim.bo[buf].filetype] then return end
+  if #vim.lsp.get_clients({ bufnr = buf }) == 0 then return end
+  vim.api.nvim_buf_call(buf, function()
+    pcall(vim.lsp.buf.code_action, {
+      apply = true,
+      context = { diagnostics = vim.diagnostic.get(buf), only = import_auto_only },
+    })
+  end)
+end
+map({ "n", "i" }, "<leader>i", lsp_import_choose, { desc = "เลือก import (เมนู)" })
+map({ "n", "i" }, "<C-.>", lsp_import_choose, { desc = "เลือก import (Quick Fix)" })
+map("n", "<leader>ia", lsp_import_auto, { desc = "import อัตโนมัติ (เดา module)" })
+map("n", "<leader>oi", lsp_organize_imports, { desc = "จัดเรียง import" })
+vim.api.nvim_create_user_command("AutoImportToggle", function()
+  vim.g.auto_import_on_save = not vim.g.auto_import_on_save
+  vim.notify("Auto import ตอนเซฟ: " .. (vim.g.auto_import_on_save and "เปิด" or "ปิด"), vim.log.levels.INFO, { title = "Import" })
+end, { desc = "เปิด/ปิด auto import ก่อนเซฟ" })
+
 -- ===== คีย์ลัด LSP =====
 vim.api.nvim_create_autocmd("LspAttach", {
   callback = function(ev)
@@ -973,6 +1119,12 @@ local function format_code()
   local mode = vim.fn.mode()
   local bufnr = vim.api.nvim_get_current_buf()
   local is_visual = (mode == "v" or mode == "V" or mode == "\22")
+
+  -- จัด import ก่อน format (เฉพาะทั้งไฟล์)
+  local ft = vim.bo[bufnr].filetype
+  if not is_visual and auto_import_fts[ft] and #vim.lsp.get_clients({ bufnr = bufnr }) > 0 then
+    pcall(vim.lsp.buf.code_action, { apply = true, context = { only = organize_imports_only } })
+  end
 
   -- 1) Prettier สำหรับไฟล์เว็บ/JS/TS (คลุมเฉพาะส่วนที่เลือกไม่ได้ — Prettier จัดทั้งไฟล์)
   if not is_visual then
@@ -1089,9 +1241,29 @@ local function goto_definition()
     vim.lsp.buf.definition()
     return
   end
-  local w = vim.pesc(word)
-  local pat = ([[(function\s+WORD\b|(const|let|var|class|interface|type|enum)\s+WORD\b|\bWORD\s*[:=]\s*(async\s*)?(function|\()|def\s+WORD\b|fn\s+WORD\b|func\s+WORD\b|class\s+WORD\b|local\s+function\s+WORD\b)]]):gsub("WORD", w)
-  require("fzf-lua").grep({ search = pat, no_esc = true, prompt = "Definition: " .. word .. " > " })
+  -- ไม่มี LSP: ใช้ ripgrep หาบรรทัดที่ประกาศชื่อนี้ แล้วโดดไปเลย (เจอที่เดียว = โดดทันที, หลายที่ = ให้เลือก)
+  local pat = ([[(function\*?\s+WORD\b|(const|let|var|class|interface|type|enum|struct|trait|mod)\s+WORD\b|\bWORD\s*[:=]\s*(async\s*)?(function\b|\(|\w+\s*=>)|def\s+WORD\b|fn\s+WORD\b|func\s+WORD\b|(public|private|protected|static|async)\s+(async\s+)?WORD\s*\(|^\s*(async\s+)?WORD\s*\([^)]*\)\s*\{)]]):gsub("WORD", word)
+  local res = vim.system({ "rg", "--vimgrep", "--no-heading", "--color=never", "-g", "!node_modules", "-e", pat, "." },
+    { text = true, cwd = vim.fn.getcwd() }):wait()
+  local items = {}
+  for line in (res.stdout or ""):gmatch("[^\r\n]+") do
+    local f, l, c, text = line:match("^(.-):(%d+):(%d+):(.*)$")
+    if f then items[#items + 1] = { file = f, lnum = tonumber(l), col = tonumber(c), text = vim.trim(text) } end
+  end
+  if #items == 0 then
+    vim.notify("ไม่พบที่ประกาศของ '" .. word .. "' ในโปรเจกต์ (อาจมาจาก library)", vim.log.levels.INFO, { title = "Go to Definition" })
+    return
+  end
+  local function jump(it)
+    vim.cmd.normal({ "m'", bang = true }) -- จำตำแหน่งเดิม กลับด้วย Ctrl+O
+    vim.cmd.edit(vim.fn.fnameescape(vim.fs.normalize(vim.fn.getcwd() .. "/" .. it.file)))
+    vim.api.nvim_win_set_cursor(0, { it.lnum, it.col - 1 })
+    vim.cmd("normal! zz")
+  end
+  if #items == 1 then return jump(items[1]) end
+  vim.ui.select(items, { prompt = "ประกาศของ '" .. word .. "':", format_item = function(it)
+    return ("%s:%d  %s"):format(it.file, it.lnum, it.text)
+  end }, function(it) if it then jump(it) end end)
 end
 for _, k in ipairs({ "<C-Space>", "<C-@>" }) do
   map("n", k, goto_definition, { desc = "ไปที่ที่ประกาศ function (Go to Definition)" })
@@ -1174,6 +1346,9 @@ vim.api.nvim_create_user_command("Keys", function()
     "  K             ดูเอกสารของโค้ด",
     "  F2            เปลี่ยนชื่อตัวแปร/ฟังก์ชัน",
     "  Space a       Code Action",
+    "  Space i / Ctrl+.  เลือก import จากเมนู (หลาย module)",
+    "  Space i a     import อัตโนมัติ (ถ้าอยากให้ LSP เดา)",
+    "  Space o i     จัดเรียง import",
     "  F1 / Ctrl+Space  เมนู suggestion",
     "",
     "พิมพ์ตัวย่อแล้ว Enter (Snippet)",
@@ -1258,6 +1433,68 @@ map("n", "<leader>sw", function()
     require("fzf-lua").lsp_live_workspace_symbols({})
   end
 end, { desc = "ค้นหาฟังก์ชันทั้งโปรเจกต์" })
+
+-- Ctrl+\ = แบ่งหน้าจอเป็น 2 ฝั่ง (แบบ VS Code) แล้วเปิดตัวเลือกไฟล์ให้เลือกว่าจะเปิดไฟล์ไหนในฝั่งใหม่
+-- ยกเลิกการเลือก (Esc) = ปิดฝั่งที่แบ่งไว้ให้เอง
+local function split_and_pick()
+  if vim.bo.filetype == "neo-tree" then vim.cmd("wincmd p") end
+  local prev_win = vim.api.nvim_get_current_win()
+  vim.cmd("vsplit")
+  local new_win = vim.api.nvim_get_current_win()
+  local chosen = false
+  local fa = require("fzf-lua.actions")
+  local function close_if_cancelled()
+    vim.schedule(function()
+      if not chosen and vim.api.nvim_win_is_valid(new_win) and #vim.api.nvim_tabpage_list_wins(0) > 1 then
+        pcall(vim.api.nvim_win_close, new_win, true)
+        if vim.api.nvim_win_is_valid(prev_win) then vim.api.nvim_set_current_win(prev_win) end
+      end
+    end)
+  end
+  require("fzf-lua").files({
+    prompt = "เปิดในหน้าต่างใหม่ > ",
+    actions = { ["default"] = function(sel, o) chosen = true; fa.file_edit_or_qf(sel, o) end },
+    winopts = { on_close = close_if_cancelled },
+  })
+end
+map({ "n", "x" }, [[<C-\>]], split_and_pick, { desc = "แบ่งหน้าจอ + เลือกไฟล์ที่จะเปิด" })
+map("i", [[<C-\>]], function() vim.cmd("stopinsert"); split_and_pick() end, { desc = "แบ่งหน้าจอ + เลือกไฟล์ที่จะเปิด" })
+-- สลับโฟกัสระหว่างหน้าจอที่แบ่ง: Space w (หรือ Ctrl+Alt+h / Ctrl+Alt+l)
+map("n", "<leader>w", "<C-w>w", { desc = "สลับไปหน้าจออีกฝั่ง" })
+map("n", "<C-A-h>", "<C-w>h", { desc = "ไปหน้าจอซ้าย" })
+map("n", "<C-A-l>", "<C-w>l", { desc = "ไปหน้าจอขวา" })
+map("n", "<leader>t", "<cmd>ToggleTerm<cr>", { desc = "เปิด/ปิด terminal ในตัว" })
+
+-- ===== Auto save =====
+-- บันทึกอัตโนมัติ: หลังหยุดพิมพ์ ~1 วินาที, ตอนออกจากโหมดพิมพ์, สลับหน้าต่าง/ไฟล์, เมื่อ nvim เสียโฟกัส
+-- เฉพาะไฟล์จริงที่มีชื่อ (ไม่ยุ่งกับ terminal/help/[No Name]) — สลับเปิด/ปิดด้วย :AutoSaveToggle หรือ Space S
+vim.g.autosave = true
+local autosave_timer = vim.uv.new_timer()
+local function autosave_now(buf)
+  if not vim.g.autosave then return end
+  buf = buf or vim.api.nvim_get_current_buf()
+  if not vim.api.nvim_buf_is_valid(buf) then return end
+  local b = vim.bo[buf]
+  if b.buftype ~= "" or not b.modifiable or b.readonly or not b.modified or vim.api.nvim_buf_get_name(buf) == "" then return end
+  vim.api.nvim_buf_call(buf, function() vim.cmd("silent! update") end)
+end
+vim.api.nvim_create_autocmd({ "InsertLeave", "FocusLost", "BufLeave", "WinLeave" }, {
+  callback = function(ev) autosave_now(ev.buf) end,
+})
+vim.api.nvim_create_autocmd("BufWritePre", {
+  callback = function(ev) auto_import_before_save(ev.buf) end,
+})
+vim.api.nvim_create_autocmd({ "TextChanged", "TextChangedI" }, {
+  callback = function(ev)
+    autosave_timer:stop()
+    autosave_timer:start(1000, 0, vim.schedule_wrap(function() autosave_now(ev.buf) end))
+  end,
+})
+vim.api.nvim_create_user_command("AutoSaveToggle", function()
+  vim.g.autosave = not vim.g.autosave
+  vim.notify("Auto save: " .. (vim.g.autosave and "เปิด" or "ปิด"), vim.log.levels.INFO, { title = "Auto save" })
+end, { desc = "เปิด/ปิด auto save" })
+map("n", "<leader>S", "<cmd>AutoSaveToggle<cr>", { desc = "เปิด/ปิด auto save" })
 
 -- file explorer / terminal / แท็บ
 -- Ctrl+B: ไปอยู่ที่ sidebar (เปิดให้ถ้ายังไม่เปิด แล้วโฟกัสที่รายการโฟลเดอร์/ไฟล์ทันที)
