@@ -72,7 +72,23 @@ end
 
 require("lazy").setup({
   -- ธีม Kanagawa (rebelot/kanagawa.nvim) — โทนญี่ปุ่น นุ่มตา คมชัด
-  { "rebelot/kanagawa.nvim", lazy = false, priority = 1000,
+  -- Theme หลัก: Catppuccin Mocha (สวย นุ่มตา คอนทราสต์ดี) — ธีม Kanagawa เดิมยังอยู่ สลับได้ด้วย :colorscheme kanagawa
+  { "catppuccin/nvim", name = "catppuccin", lazy = false, priority = 1000,
+    config = function()
+      require("catppuccin").setup({
+        flavour = "mocha",
+        term_colors = true,
+        transparent_background = false,
+        styles = { comments = { "italic" }, keywords = { "italic" }, functions = {} },
+        integrations = {
+          neotree = true, treesitter = true, blink_cmp = true, gitsigns = true, which_key = true,
+          rainbow_delimiters = true, fzf = true, bufferline = true, native_lsp = { enabled = true },
+        },
+      })
+      vim.cmd.colorscheme("catppuccin")
+    end },
+
+  { "rebelot/kanagawa.nvim", lazy = true,
     config = function()
       require("kanagawa").setup({
         compile = false,
@@ -180,6 +196,14 @@ require("lazy").setup({
         default = true,
         color_icons = true,
         variant = "dark",
+        -- ไอคอน CSS ดั้งเดิม (U+E6B8) ไม่มีในฟอนต์ Nerd Font รุ่นเก่า → ใช้ css3 (U+E749) ที่มีทุกรุ่น
+        override_by_extension = {
+          css = { icon = vim.fn.nr2char(0xe749), color = "#42a5f5", name = "Css" },
+          scss = { icon = vim.fn.nr2char(0xe749), color = "#f55385", name = "Scss" },
+        },
+        override_by_filename = {
+          ["globals.css"] = { icon = vim.fn.nr2char(0xe749), color = "#42a5f5", name = "GlobalsCss" },
+        },
       })
       vim.api.nvim_create_autocmd("ColorScheme", {
         pattern = "*",
@@ -339,20 +363,17 @@ require("lazy").setup({
     dependencies = { "nvim-tree/nvim-web-devicons" },
     config = function()
       require("bufferline").setup({
-        highlights = {
-          fill = { bg = "#181818" },
-          background = { fg = "#6e7681", bg = "#181818" },
-          buffer_selected = { fg = "#e8e6dc", bg = "#1f1f1f", bold = true, italic = false },
-          buffer_visible = { fg = "#9a9890", bg = "#181818" },
-          separator = { fg = "#181818", bg = "#181818" },
-          separator_selected = { fg = "#181818", bg = "#1f1f1f" },
-          separator_visible = { fg = "#181818", bg = "#181818" },
-          indicator_selected = { fg = "#d97757", bg = "#1f1f1f" },
-          modified = { fg = "#d97757", bg = "#181818" },
-          modified_selected = { fg = "#d97757", bg = "#1f1f1f" },
-          close_button_selected = { fg = "#d97757", bg = "#1f1f1f" },
-          offset_separator = { fg = "#181818", bg = "#181818" },
-        },
+        -- สีแท็บตามธีม Catppuccin (ถ้าสลับไปธีมอื่น ใช้สีของธีมนั้นเอง)
+        highlights = (function()
+          if (vim.g.colors_name or "") ~= "catppuccin" then return nil end
+          for _, mod in ipairs({ "catppuccin.groups.integrations.bufferline", "catppuccin.special.bufferline" }) do
+            local ok, m = pcall(require, mod)
+            if ok then
+              local ok2, h = pcall(m.get or m.get_theme)
+              if ok2 then return h end
+            end
+          end
+        end)(),
         options = {
           mode = "buffers",
           style_preset = require("bufferline").style_preset.no_italic,
@@ -376,26 +397,27 @@ require("lazy").setup({
 
   -- terminal ในตัว (Ctrl+\)
   { "akinsho/toggleterm.nvim", version = "*",
-    opts = { open_mapping = [[<C-\>]], direction = "horizontal", size = 15 } },
+    -- shell ของ terminal ในตัว: ใช้ pwsh (PowerShell 7) ถ้ามี ไม่งั้น Git Bash ไม่งั้น powershell เดิม
+    opts = function()
+      local shell
+      for _, s in ipairs({ "pwsh", "C:/Program Files/Git/bin/bash.exe", "powershell" }) do
+        if vim.fn.executable(s) == 1 then shell = s; break end
+      end
+      return { open_mapping = [[<C-\>]], direction = "horizontal", size = 15, shell = shell or vim.o.shell }
+    end },
 
   -- แถบสถานะ + สัญลักษณ์ git
   -- สีโหมดชัดเจน: NORMAL ส้ม / INSERT เขียว / VISUAL ฟ้า
   { "nvim-lualine/lualine.nvim",
     opts = function()
-      local bg = "#1f1f1f"
-      local function mode(c) return { a = { fg = bg, bg = c, gui = "bold" }, b = { fg = c, bg = "#282828" }, c = { fg = "#c2c0b6", bg = bg } } end
       return { sections = {
         lualine_b = { "branch", "diagnostics" },
         -- โฟลเดอร์โปรเจกต์ (cwd) + path ของไฟล์ที่เปิดอยู่ (relative)
         lualine_c = {
-          { function() return "  " .. vim.fn.fnamemodify(vim.fn.getcwd(), ":t") end, color = { fg = "#d97757", gui = "bold" } },
+          { function() return "  " .. vim.fn.fnamemodify(vim.fn.getcwd(), ":t") end, color = { fg = "#89b4fa", gui = "bold" } },
           { "filename", path = 1, symbols = { modified = " ●", readonly = " ", unnamed = "" } },
         },
-      }, options = { globalstatus = true, theme = {
-        normal = mode("#d97757"), insert = mode("#8fb573"), visual = mode("#6a9bcc"),
-        replace = mode("#c15f5f"), command = mode("#e8c26b"), terminal = mode("#8fb573"),
-        inactive = mode("#6e7681"),
-      } } }
+      }, options = { globalstatus = true, theme = "auto", section_separators = "", component_separators = "|" } }
     end },
   { "lewis6991/gitsigns.nvim", opts = {} },
   -- ปิดวงเล็บ/quote อัตโนมัติ + กด Enter กลางคู่ เช่น <div>|</div> ให้แตก 3 บรรทัด + indent
@@ -1049,11 +1071,36 @@ end
 
 -- ห้ามผูก <leader><space> (Space เบิ้ล): กด Space ค้าง = terminal ส่ง Space รัว 2 ครั้ง
 -- จะเข้าโหมดพิมพ์ + พิมพ์ช่องว่างรัวโดยไม่ตั้งใจ ใช้ Ctrl+Space / F1 / Option+i แทน
-for _, k in ipairs({ "<F1>", "<A-i>", "<M-i>", "ˆ", "<A-ร>", "<M-ร>", "<A-.>", "<M-.>", "≥", "<C-Space>", "<C-@>" }) do
+for _, k in ipairs({ "<F1>", "<A-i>", "<M-i>", "ˆ", "<A-ร>", "<M-ร>", "<A-.>", "<M-.>", "≥" }) do
   map("n", k, trigger_code_suggestion, { desc = "Suggestion / IntelliSense" })
+end
+
+-- Normal: Ctrl+Space บนชื่อ function/ตัวแปร = ไปที่ไฟล์/บรรทัดที่ประกาศไว้ (Go to Definition)
+-- มี LSP ใช้ LSP; ไม่มี LSP (เช่น ts_ls ยังไม่พร้อม) ค้นหาบรรทัดประกาศ function/const/class/def/fn ทั้งโปรเจกต์แทน
+-- กลับมาที่เดิมด้วย Ctrl+O  (Insert: Ctrl+Space ยังเป็นเมนู suggestion)
+local function goto_definition()
+  local word = vim.fn.expand("<cword>")
+  if word == "" then return end
+  local has_def = false
+  for _, c in ipairs(vim.lsp.get_clients({ bufnr = 0 })) do
+    if c:supports_method("textDocument/definition", 0) then has_def = true end
+  end
+  if has_def then
+    vim.lsp.buf.definition()
+    return
+  end
+  local w = vim.pesc(word)
+  local pat = ([[(function\s+WORD\b|(const|let|var|class|interface|type|enum)\s+WORD\b|\bWORD\s*[:=]\s*(async\s*)?(function|\()|def\s+WORD\b|fn\s+WORD\b|func\s+WORD\b|class\s+WORD\b|local\s+function\s+WORD\b)]]):gsub("WORD", w)
+  require("fzf-lua").grep({ search = pat, no_esc = true, prompt = "Definition: " .. word .. " > " })
+end
+for _, k in ipairs({ "<C-Space>", "<C-@>" }) do
+  map("n", k, goto_definition, { desc = "ไปที่ที่ประกาศ function (Go to Definition)" })
 end
 -- Insert: ใช้ keymap ของ blink.cmp เป็นหลัก (ไม่ซ้ำซ้อนกับ mapping ข้างบน)
 map("i", "<F1>", blink_suggest, { desc = "Suggestion (สำรองถ้า Ctrl+Space ถูก IME ดัก)" })
+-- Ctrl+Space ใน Insert: ผูกแบบ global ซ้ำอีกชั้น (กรณีปุ่มถูกส่งมาเป็น <C-Space> หรือ <C-@> ที่ blink ไม่จับ)
+map("i", "<C-Space>", blink_suggest, { desc = "Suggestion โค้ด (Ctrl+Space)" })
+map("i", "<C-@>", blink_suggest, { desc = "Suggestion โค้ด (Ctrl+Space)" })
 
 -- บันทึก / undo / redo / เลือกทั้งหมด
 map({ "n", "v" }, "<C-s>", "<cmd>w<cr>", { desc = "บันทึก" })
@@ -1148,6 +1195,15 @@ map("n", "<leader>h", "<cmd>Keys<cr>", { desc = "แสดงปุ่มลั�
 -- ค้นหาคำทั้งโปรเจกต์แล้วเห็นว่าแต่ละผลอยู่ไฟล์/บรรทัดไหน:
 -- ไม่คลุมอะไร = ค้นคำใต้เคอร์เซอร์ทันที / คลุมข้อความใน Visual = ค้นข้อความที่คลุม / เคอร์เซอร์ไม่มีคำ = พิมพ์คำค้นเอง
 local function visual_text()
+  -- กำลังคลุมอยู่ (Visual/Select): อ่านจากช่วงที่คลุมจริง — mark '< '> ยังไม่อัปเดตจนกว่าจะออกจากโหมด
+  local m = vim.fn.mode()
+  if m:match("^[vV\22sS\19]") then
+    local rt = ({ s = "v", S = "V", ["\19"] = "\22" })[m] or m
+    local ok, region = pcall(vim.fn.getregion, vim.fn.getpos("v"), vim.fn.getpos("."), { type = rt })
+    if ok and region then
+      return (table.concat(region, " "):gsub("%s+", " "):gsub("^%s+", ""):gsub("%s+$", ""))
+    end
+  end
   local s = vim.api.nvim_buf_get_mark(0, "<")
   local e = vim.api.nvim_buf_get_mark(0, ">")
   local lines = vim.api.nvim_buf_get_lines(0, s[1] - 1, e[1], false)
@@ -1157,7 +1213,7 @@ local function visual_text()
   return table.concat(lines, " "):gsub("%s+", " "):gsub("^%s+", ""):gsub("%s+$", "")
 end
 local function grep_word()
-  local in_visual = (vim.fn.mode() == "x" or vim.fn.mode() == "v" or vim.fn.mode() == "V")
+  local in_visual = vim.fn.mode():match("^[vV\22sS\19]") ~= nil
   local word = in_visual and visual_text() or vim.fn.expand("<cword>")
   if word == "" then
     require("fzf-lua").live_grep({})
@@ -1167,21 +1223,21 @@ local function grep_word()
 end
 map({ "n", "x" }, "<leader>g", grep_word, { desc = "ค้นหาคำทั้งโปรเจกต์ (คำใต้เคอร์เซอร์/ที่คลุม)" })
 -- Ctrl+Shift+F แบบ VS Code = ค้นหาข้อความทั้งโปรเจกต์ (บาง terminal แยก Shift ไม่ได้ จะได้เป็น Ctrl+F แทน — ใช้ Space g สำรอง)
-map({ "n", "x" }, "<C-S-f>", grep_word, { desc = "ค้นหาข้อความทั้งโปรเจกต์" })
+map({ "n", "x", "s" }, "<C-S-f>", grep_word, { desc = "ค้นหาข้อความทั้งโปรเจกต์" })
 map("i", "<C-S-f>", function() vim.cmd("stopinsert"); grep_word() end, { desc = "ค้นหาข้อความทั้งโปรเจกต์" })
 -- ปุ่มสำรองที่ terminal ไม่ดักไว้ (Windows Terminal ใช้ Ctrl+Shift+F เป็นค้นหาของตัวเองและไม่ส่งให้ nvim)
-map({ "n", "x" }, "<F4>", grep_word, { desc = "ค้นหาข้อความทั้งโปรเจกต์ (สำรอง)" })
+map({ "n", "x", "s" }, "<F4>", grep_word, { desc = "ค้นหาข้อความทั้งโปรเจกต์ (สำรอง)" })
 map("i", "<F4>", function() vim.cmd("stopinsert"); grep_word() end, { desc = "ค้นหาข้อความทั้งโปรเจกต์ (สำรอง)" })
 
 -- Ctrl+F แบบ VS Code = ค้นหาข้อความในไฟล์นี้ (แสดงรายการบรรทัดที่ตรง พิมพ์กรองได้ Enter ไปที่บรรทัดนั้น)
 -- ตอนคลุมข้อความอยู่ จะค้นด้วยข้อความที่คลุม
 local function find_in_file()
-  local in_visual = vim.fn.mode():match("^[vV\22]") ~= nil
+  local in_visual = vim.fn.mode():match("^[vV\22sS\19]") ~= nil
   local q = in_visual and visual_text() or nil
   if in_visual then vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), "nx", false) end
   require("fzf-lua").blines(q and q ~= "" and { search = q } or {})
 end
-map({ "n", "x" }, "<C-f>", find_in_file, { desc = "ค้นหาในไฟล์นี้ (Ctrl+F แบบ VS Code)" })
+map({ "n", "x", "s" }, "<C-f>", find_in_file, { desc = "ค้นหาในไฟล์นี้ (Ctrl+F แบบ VS Code)" })
 map("i", "<C-f>", function() vim.cmd("stopinsert"); find_in_file() end, { desc = "ค้นหาในไฟล์นี้" })
 
 -- ค้นหาฟังก์ชันทุกไฟล์โดยไม่ต้องมี LSP (grep หา function/const ที่เป็นฟังก์ชันทุกไฟล์ในโปรเจกต์)
@@ -1204,7 +1260,17 @@ map("n", "<leader>sw", function()
 end, { desc = "ค้นหาฟังก์ชันทั้งโปรเจกต์" })
 
 -- file explorer / terminal / แท็บ
-map({ "n", "i" }, "<C-b>", "<cmd>Neotree toggle position=left<cr>", { desc = "เปิด/ปิด Explorer" })
+-- Ctrl+B: ไปอยู่ที่ sidebar (เปิดให้ถ้ายังไม่เปิด แล้วโฟกัสที่รายการโฟลเดอร์/ไฟล์ทันที)
+-- ถ้าอยู่ใน sidebar อยู่แล้ว กดซ้ำ = กลับไปหน้าไฟล์เดิม (Space f e = เปิด/ปิด sidebar)
+local function focus_sidebar()
+  if vim.bo.filetype == "neo-tree" then
+    vim.cmd("wincmd p")
+  else
+    vim.cmd("Neotree focus position=left reveal")
+  end
+end
+map({ "n", "x" }, "<C-b>", focus_sidebar, { desc = "ไปที่ Explorer (sidebar)" })
+map("i", "<C-b>", function() vim.cmd("stopinsert"); focus_sidebar() end, { desc = "ไปที่ Explorer (sidebar)" })
 map("n", "<leader>fe", "<cmd>Neotree toggle position=left<cr>", { desc = "เปิด/ปิด Explorer (สำรอง)" })
 map("n", "<S-l>", "<cmd>BufferLineCycleNext<cr>", { desc = "แท็บถัดไป" })
 map("n", "<S-h>", "<cmd>BufferLineCyclePrev<cr>", { desc = "แท็บก่อนหน้า" })
@@ -1314,8 +1380,8 @@ vim.api.nvim_create_autocmd("VimEnter", {
     local pad = string.rep(" ", math.max(0, math.floor((vim.o.columns - maxw) / 2)))
     for _, l in ipairs(lines) do out[#out + 1] = pad .. l end
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, out)
-    vim.api.nvim_set_hl(0, "StartLogo", { fg = "#d97757", bold = true })
-    vim.api.nvim_set_hl(0, "StartKey", { fg = "#1f1f1f", bg = "#d97757", bold = true })
+    vim.api.nvim_set_hl(0, "StartLogo", { fg = "#89b4fa", bold = true })
+    vim.api.nvim_set_hl(0, "StartKey", { fg = "#1e1e2e", bg = "#89b4fa", bold = true })
     vim.api.nvim_set_hl(0, "StartDim", { fg = "#6e7681" })
     for i = 1, #lines do
       local row = pad_top + i - 1
@@ -1364,9 +1430,9 @@ vim.o.guicursor = table.concat({
   "o:hor50", "v:block-CursorVisual", "sm:block-CursorSelect-blinkon500-blinkoff300",
 }, ",")
 local function cursor_hl()
-  for name, c in pairs({ CursorNormal = "#d97757", CursorInsert = "#8fb573", CursorVisual = "#6a9bcc",
-    CursorSelect = "#b48ead", CursorReplace = "#c15f5f" }) do
-    vim.api.nvim_set_hl(0, name, { bg = c, fg = "#1f1f1f" })
+  for name, c in pairs({ CursorNormal = "#89b4fa", CursorInsert = "#a6e3a1", CursorVisual = "#cba6f7",
+    CursorSelect = "#f9e2af", CursorReplace = "#f38ba8" }) do
+    vim.api.nvim_set_hl(0, name, { bg = c, fg = "#1e1e2e" })
   end
 end
 cursor_hl()
