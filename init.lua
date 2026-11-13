@@ -3,6 +3,7 @@
 -- ต้องใช้ Nerd Font ใน terminal เพื่อให้ไอคอนแสดงถูกต้อง (เช่น JetBrainsMono Nerd Font)
 
 vim.g.mapleader = " "
+local WIN = vim.fn.has("win32") == 1 -- ปุ่มลัดแบบ VS Code บน Windows ใช้ Alt (= Cmd บน Mac)
 if vim.loader then vim.loader.enable() end  -- cache bytecode ของ lua → เปิด nvim เร็วขึ้น
 
 -- ===== พื้นฐาน + เมาส์ =====
@@ -472,9 +473,9 @@ require("lazy").setup({
         { "<leader>sw", desc = "ฟังก์ชันทั้งโปรเจกต์ (workspace)" },
         { "<leader>fe", desc = "เปิด/ปิด File Explorer" },
         { "<leader>x", desc = "ปิดแท็บปัจจุบัน" },
-        { "<C-w>", desc = "ปิดแท็บ (แบบ VS Code)" },
-        { "<C-f>", desc = "ค้นหาในไฟล์นี้ (แบบ VS Code)" },
-        { "<C-S-f>", desc = "ค้นหาข้อความทั้งโปรเจกต์ (แบบ VS Code)" },
+        { WIN and "<A-w>" or "<C-w>", desc = "ปิดแท็บ (แบบ VS Code)" },
+        { WIN and "<A-f>" or "<C-f>", desc = "ค้นหาในไฟล์นี้ (แบบ VS Code)" },
+        { WIN and "<A-g>" or "<C-S-f>", desc = "ค้นหาข้อความทั้งโปรเจกต์ (แบบ VS Code)" },
         { "<leader>a", desc = "Code Action (LSP)" },
         { "<leader>i", desc = "เลือก import (เมนู)" },
         { "<leader>ia", desc = "import อัตโนมัติ (เดา module)" },
@@ -503,8 +504,8 @@ require("lazy").setup({
     end,
     opts = {
       custom_key_maps = {
-        { { "n", "i" }, "<C-s>", function() vim.cmd("w") end },
-        { { "n", "i" }, "<C-/>", function() vim.cmd("normal gcc") end },
+        { { "n", "i" }, WIN and "<A-s>" or "<C-s>", function() vim.cmd("w") end },
+        { { "n", "i" }, WIN and "<A-/>" or "<C-/>", function() vim.cmd("normal gcc") end },
       },
     },
     keys = {
@@ -998,6 +999,12 @@ local function map(modes, lhs, rhs, opts)
   end
 end
 
+local function vscode_lhs(key) return (WIN and "<A-" or "<C-") .. key .. ">" end
+local function vscode_map(modes, key, rhs, opts)
+  map(modes, vscode_lhs(key), rhs, opts)
+  if WIN and key:match("^%a$") then map(modes, "<M-" .. key .. ">", rhs, opts) end
+end
+
 -- ===== Import: เลือกแหล่ง import เอง (ไม่ยัดให้อัตโนมัติ) =====
 vim.g.auto_import_on_save = false
 local auto_import_fts = {
@@ -1197,6 +1204,7 @@ for _, k in ipairs({ "<A-S-f>", "<M-S-f>", "<A-F>", "<M-F>" }) do
 end
 
 -- ===== คีย์ลัดแบบ VS Code / Cursor =====
+-- Windows: Alt = Cmd บน Mac (ผูกผ่าน vscode_map); Ctrl คงไว้ให้เมนู completion / Ctrl+D / Ctrl+Space
 -- หมายเหตุ: terminal ส่วนใหญ่แยก Ctrl+Shift+<ตัวอักษร> ไม่ได้ จึงใช้ Space (leader) แทน
 local fzf = function(fn) return function() require("fzf-lua")[fn]() end end
 
@@ -1281,32 +1289,30 @@ map("i", "<F1>", blink_suggest, { desc = "Suggestion (สำรองถ้า C
 map("i", "<C-Space>", blink_suggest, { desc = "Suggestion โค้ด (Ctrl+Space)" })
 map("i", "<C-@>", blink_suggest, { desc = "Suggestion โค้ด (Ctrl+Space)" })
 
--- บันทึก / undo / redo / เลือกทั้งหมด
-map({ "n", "v" }, "<C-s>", "<cmd>w<cr>", { desc = "บันทึก" })
-map("i", "<C-s>", "<esc><cmd>w<cr>", { desc = "บันทึก" })
-map("n", "<C-z>", "u", { desc = "undo" })
-map("i", "<C-z>", "<C-o>u", { desc = "undo" })
-map("n", "<C-y>", "<C-r>", { desc = "redo" })
-map("i", "<C-y>", "<C-o><C-r>", { desc = "redo" })
--- Ctrl+A เลือกทั้งหมดทุกโหมดแบบ VS Code (Normal/Insert/Visual/Select) — พิมพ์ทับได้เลย
--- เดิมโหมดพิมพ์ Ctrl+A = ไปหน้าสุดบรรทัด (ชนคำสั่ง Home อยู่แล้ว) เลยเปลี่ยนเป็นเลือกทั้งหมด
-map({ "n", "x" }, "<C-a>", "ggVG", { desc = "เลือกทั้งหมด" })
-map("i", "<C-a>", "<Esc>ggVG", { desc = "เลือกทั้งหมด" })
-map("s", "<C-a>", "<C-g>ggVG", { desc = "เลือกทั้งหมด" })
+-- บันทึก / undo / redo / เลือกทั้งหมด (Windows: Alt = Cmd บน Mac)
+vscode_map({ "n", "v" }, "s", "<cmd>w<cr>", { desc = "บันทึก" })
+vscode_map("i", "s", "<esc><cmd>w<cr>", { desc = "บันทึก" })
+vscode_map("n", "z", "u", { desc = "undo" })
+vscode_map("i", "z", "<C-o>u", { desc = "undo" })
+vscode_map("n", "y", "<C-r>", { desc = "redo" })
+vscode_map("i", "y", "<C-o><C-r>", { desc = "redo" })
+vscode_map({ "n", "x" }, "a", "ggVG", { desc = "เลือกทั้งหมด" })
+vscode_map("i", "a", "<Esc>ggVG", { desc = "เลือกทั้งหมด" })
+vscode_map("s", "a", "<C-g>ggVG", { desc = "เลือกทั้งหมด" })
 
 -- copy / cut ตอนเลือกข้อความ (รองรับทั้ง Visual mode และ Select mode)
-map("x", "<C-c>", "y", { desc = "copy" })
-map("s", "<C-c>", "<C-g>y", { desc = "copy" })
-map("x", "<C-x>", "d", { desc = "cut" })
-map("s", "<C-x>", "<C-g>d", { desc = "cut" })
+vscode_map("x", "c", "y", { desc = "copy" })
+vscode_map("s", "c", "<C-g>y", { desc = "copy" })
+vscode_map("x", "x", "d", { desc = "cut" })
+vscode_map("s", "x", "<C-g>d", { desc = "cut" })
 
--- ค้นหา (Ctrl+P ทุกโหมดหลัก — ใน insert จะออกจาก insert แล้วเปิด fzf)
-map("n", "<C-p>", fzf_open_files, { desc = "ค้นหาไฟล์" })
-map("i", "<C-p>", function()
+-- ค้นหาไฟล์ (Windows: Alt+P = Cmd+P)
+vscode_map("n", "p", fzf_open_files, { desc = "ค้นหาไฟล์" })
+vscode_map("i", "p", function()
   vim.cmd("stopinsert")
   fzf_open_files()
 end, { desc = "ค้นหาไฟล์" })
-map("x", "<C-p>", function()
+vscode_map("x", "p", function()
   local esc = vim.api.nvim_replace_termcodes("<Esc>", true, false, true)
   vim.api.nvim_feedkeys(esc, "n", false)
   vim.schedule(fzf_open_files)
@@ -1325,27 +1331,27 @@ vim.api.nvim_create_user_command("Keys", function()
     "ปุ่มลัดทั้งหมด (Space = ปุ่ม leader กดนำหน้าทุกตัว)",
     "",
     "ค้นหา / ไฟล์",
-    "  Ctrl+P        ค้นหาไฟล์",
+    WIN and "  Alt+P         ค้นหาไฟล์" or "  Ctrl+P        ค้นหาไฟล์",
     "  Space p       เมนูคำสั่งทั้งหมด (ค้นหาแล้ว Enter)",
-    "  Space g / F4 / Ctrl+Shift+F  ค้นหาคำทั้งโปรเจกต์ (คำใต้เคอร์เซอร์/ที่คลุม)",
+    WIN and "  Alt+G / Space g / F4  ค้นหาคำทั้งโปรเจกต์" or "  Space g / F4 / Ctrl+Shift+F  ค้นหาคำทั้งโปรเจกต์",
     "  Space s       ฟังก์ชัน/คลาสในไฟล์นี้",
     "  Space sf      ฟังก์ชันทุกไฟล์ (ไม่ต้องมี LSP)",
     "  Space sw      ฟังก์ชันทั้งโปรเจกต์",
     "  Space b       สลับไฟล์ที่เปิดอยู่",
     "",
     "สร้าง / แก้ไขไฟล์",
-    "  Ctrl+N        สร้างไฟล์ใหม่ (รองรับ {a,b}.tsx สร้างหลายไฟล์)",
-    "  Ctrl+B        เปิด/ปิด File Explorer (a=ไฟล์, A=โฟลเดอร์, d=ลบ)",
+    (WIN and "  Alt+N" or "  Ctrl+N") .. "        สร้างไฟล์ใหม่ (รองรับ {a,b}.tsx)",
+    (WIN and "  Alt+Shift+B" or "  Ctrl+B") .. "     File Explorer (a=ไฟล์, A=โฟลเดอร์, d=ลบ)",
     "  Space fe      เปิด/ปิด File Explorer (สำรอง)",
-    "  Ctrl+F        ค้นหาในไฟล์นี้ (Space f f)",
+    (WIN and "  Alt+F" or "  Ctrl+F") .. "        ค้นหาในไฟล์นี้",
     "  Space F / Alt+Shift+F  จัดรูปแบบโค้ด (Format)",
-    "  Ctrl+S        บันทึก",
-    "  Ctrl+/        คอมเมนต์บรรทัด",
+    (WIN and "  Alt+S" or "  Ctrl+S") .. "        บันทึก",
+    (WIN and "  Alt+/" or "  Ctrl+/") .. "        คอมเมนต์บรรทัด",
     "",
     "แท็บ / หน้าต่าง",
-    "  Ctrl+W / Space x  ปิดแท็บปัจจุบัน",
+    (WIN and "  Alt+W" or "  Ctrl+W") .. " / Space x  ปิดแท็บปัจจุบัน",
     "  Shift+l / h   แท็บถัดไป / ก่อนหน้า",
-    "  Ctrl+\\        เปิด terminal ในตัว",
+    (WIN and "  Alt+\\" or "  Ctrl+\\") .. "        split + เลือกไฟล์",
     "",
     "โค้ด (LSP)",
     "  gd / F12      ไปที่ definition",
@@ -1408,8 +1414,14 @@ local function grep_word()
 end
 map({ "n", "x" }, "<leader>g", grep_word, { desc = "ค้นหาคำทั้งโปรเจกต์ (คำใต้เคอร์เซอร์/ที่คลุม)" })
 -- Ctrl+Shift+F แบบ VS Code = ค้นหาข้อความทั้งโปรเจกต์ (บาง terminal แยก Shift ไม่ได้ จะได้เป็น Ctrl+F แทน — ใช้ Space g สำรอง)
-map({ "n", "x", "s" }, "<C-S-f>", grep_word, { desc = "ค้นหาข้อความทั้งโปรเจกต์" })
-map("i", "<C-S-f>", function() vim.cmd("stopinsert"); grep_word() end, { desc = "ค้นหาข้อความทั้งโปรเจกต์" })
+-- ค้นหาทั้งโปรเจกต์: Alt+G (ไม่ใช้ Alt+Shift+F เพราะชน Format); mac/อื่นๆ ยังเป็น Ctrl+Shift+F
+if WIN then
+  vscode_map({ "n", "x", "s" }, "g", grep_word, { desc = "ค้นหาข้อความทั้งโปรเจกต์" })
+  vscode_map("i", "g", function() vim.cmd("stopinsert"); grep_word() end, { desc = "ค้นหาข้อความทั้งโปรเจกต์" })
+else
+  map({ "n", "x", "s" }, "<C-S-f>", grep_word, { desc = "ค้นหาข้อความทั้งโปรเจกต์" })
+  map("i", "<C-S-f>", function() vim.cmd("stopinsert"); grep_word() end, { desc = "ค้นหาข้อความทั้งโปรเจกต์" })
+end
 -- ปุ่มสำรองที่ terminal ไม่ดักไว้ (Windows Terminal ใช้ Ctrl+Shift+F เป็นค้นหาของตัวเองและไม่ส่งให้ nvim)
 map({ "n", "x", "s" }, "<F4>", grep_word, { desc = "ค้นหาข้อความทั้งโปรเจกต์ (สำรอง)" })
 map("i", "<F4>", function() vim.cmd("stopinsert"); grep_word() end, { desc = "ค้นหาข้อความทั้งโปรเจกต์ (สำรอง)" })
@@ -1422,8 +1434,8 @@ local function find_in_file()
   if in_visual then vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), "nx", false) end
   require("fzf-lua").blines(q and q ~= "" and { search = q } or {})
 end
-map({ "n", "x", "s" }, "<C-f>", find_in_file, { desc = "ค้นหาในไฟล์นี้ (Ctrl+F แบบ VS Code)" })
-map("i", "<C-f>", function() vim.cmd("stopinsert"); find_in_file() end, { desc = "ค้นหาในไฟล์นี้" })
+vscode_map({ "n", "x", "s" }, "f", find_in_file, { desc = "ค้นหาในไฟล์นี้ (แบบ VS Code)" })
+vscode_map("i", "f", function() vim.cmd("stopinsert"); find_in_file() end, { desc = "ค้นหาในไฟล์นี้" })
 
 -- ค้นหาฟังก์ชันทุกไฟล์โดยไม่ต้องมี LSP (grep หา function/const ที่เป็นฟังก์ชันทุกไฟล์ในโปรเจกต์)
 local function find_functions_all()
@@ -1467,8 +1479,8 @@ local function split_and_pick()
     winopts = { on_close = close_if_cancelled },
   })
 end
-map({ "n", "x" }, [[<C-\>]], split_and_pick, { desc = "แบ่งหน้าจอ + เลือกไฟล์ที่จะเปิด" })
-map("i", [[<C-\>]], function() vim.cmd("stopinsert"); split_and_pick() end, { desc = "แบ่งหน้าจอ + เลือกไฟล์ที่จะเปิด" })
+vscode_map({ "n", "x" }, [[\]], split_and_pick, { desc = "แบ่งหน้าจอ + เลือกไฟล์ที่จะเปิด" })
+vscode_map("i", [[\]], function() vim.cmd("stopinsert"); split_and_pick() end, { desc = "แบ่งหน้าจอ + เลือกไฟล์ที่จะเปิด" })
 -- สลับโฟกัสระหว่างหน้าจอที่แบ่ง: Space w (หรือ Ctrl+Alt+h / Ctrl+Alt+l)
 map("n", "<leader>w", "<C-w>w", { desc = "สลับไปหน้าจออีกฝั่ง" })
 map("n", "<C-A-h>", "<C-w>h", { desc = "ไปหน้าจอซ้าย" })
@@ -1516,24 +1528,31 @@ local function focus_sidebar()
     vim.cmd("Neotree focus position=left reveal")
   end
 end
-map({ "n", "x" }, "<C-b>", focus_sidebar, { desc = "ไปที่ Explorer (sidebar)" })
-map("i", "<C-b>", function() vim.cmd("stopinsert"); focus_sidebar() end, { desc = "ไปที่ Explorer (sidebar)" })
+-- Explorer: Alt+Shift+B (Alt+B ชนเลือกคำทางซ้าย)
+if WIN then
+  map({ "n", "x" }, "<A-S-b>", focus_sidebar, { desc = "ไปที่ Explorer (sidebar)" })
+  map("i", "<A-S-b>", function() vim.cmd("stopinsert"); focus_sidebar() end, { desc = "ไปที่ Explorer (sidebar)" })
+  map({ "n", "x" }, "<M-S-b>", focus_sidebar, { desc = "ไปที่ Explorer (sidebar)" })
+  map("i", "<M-S-b>", function() vim.cmd("stopinsert"); focus_sidebar() end, { desc = "ไปที่ Explorer (sidebar)" })
+else
+  vscode_map({ "n", "x" }, "b", focus_sidebar, { desc = "ไปที่ Explorer (sidebar)" })
+  vscode_map("i", "b", function() vim.cmd("stopinsert"); focus_sidebar() end, { desc = "ไปที่ Explorer (sidebar)" })
+end
 map("n", "<leader>fe", "<cmd>Neotree toggle position=left<cr>", { desc = "เปิด/ปิด Explorer (สำรอง)" })
 map("n", "<S-l>", "<cmd>BufferLineCycleNext<cr>", { desc = "แท็บถัดไป" })
 map("n", "<S-h>", "<cmd>BufferLineCyclePrev<cr>", { desc = "แท็บก่อนหน้า" })
 local function close_tab() require("mini.bufremove").delete(0, false) end
 -- Ctrl+W แบบ VS Code = ปิดแท็บ (Space x ยังใช้ได้เป็นสำรอง)
 -- หมายเหตุ: Ctrl+W เดิมเป็นปุ่มนำหน้าคำสั่งหน้าต่าง (Ctrl+W w/h/j/k) — ยกให้ปิดแท็บแล้ว ใช้เมาส์/คำสั่ง :split แทน
-map("n", "<C-w>", close_tab, { desc = "ปิดแท็บ" })
+vscode_map("n", "w", close_tab, { desc = "ปิดแท็บ" })
 map("n", "<leader>x", close_tab, { desc = "ปิดแท็บ" })
 
--- คอมเมนต์บรรทัด (Ctrl+/ ; บาง terminal ส่งเป็น Ctrl+_)
-map("n", "<C-/>", "gcc", { remap = true, desc = "คอมเมนต์" })
-map("n", "<C-_>", "gcc", { remap = true, desc = "คอมเมนต์" })
-map("x", "<C-/>", "gc", { remap = true, desc = "คอมเมนต์" })
-map("x", "<C-_>", "gc", { remap = true, desc = "คอมเมนต์" })
-map("s", "<C-/>", "<C-g>gc", { remap = true, desc = "คอมเมนต์" })
-map("s", "<C-_>", "<C-g>gc", { remap = true, desc = "คอมเมนต์" })
+-- คอมเมนต์บรรทัด (บาง terminal ส่ง / เป็น _)
+for _, key in ipairs({ "/>", "_" }) do
+  vscode_map("n", key, "gcc", { remap = true, desc = "คอมเมนต์" })
+  vscode_map("x", key, "gc", { remap = true, desc = "คอมเมนต์" })
+  vscode_map("s", key, "<C-g>gc", { remap = true, desc = "คอมเมนต์" })
+end
 
 -- Option + d (Alt+d / ∂ บน Mac / แป้นไทย): คลุมเฉพาะคำที่ติดกัน (word) แบบพิมพ์ทับได้ ไม่ใช่ทั้งแถว!
 for _, k in ipairs({ "<A-d>", "<M-d>", "∂", "<A-ก>", "<M-ก>" }) do
@@ -1570,7 +1589,9 @@ map("n", "<C-e>", "$", { desc = "ไปท้ายสุดของโค้�
 map("i", "<C-e>", "<End>", { desc = "ไปท้ายสุดของโค้ดในบรรทัด" })
 
 -- Option + ซ้าย/ขวา: คลุมข้อความทีละคำ/ทีละท่อน (ไม่คลุมทั้งแถว!) กดซ้ำเพื่อคลุมคำถัดไปต่อได้เรื่อยๆ
-for _, k in ipairs({ "<A-Right>", "<M-Right>", "<A-S-Right>", "<M-S-Right>", "<M-f>", "<A-f>" }) do
+local word_expand_right = { "<A-Right>", "<M-Right>", "<A-S-Right>", "<M-S-Right>" }
+if not WIN then word_expand_right[#word_expand_right + 1] = "<M-f>"; word_expand_right[#word_expand_right + 1] = "<A-f>" end
+for _, k in ipairs(word_expand_right) do
   map("n", k, "ve<C-g>", { desc = "คลุมคำถัดไปทางขวา (พิมพ์ทับได้)" })
   map("i", k, "<C-o>ve<C-g>", { desc = "คลุมคำถัดไปทางขวา (พิมพ์ทับได้)" })
   map("x", k, "e<C-g>", { desc = "ขยายคลุมคำถัดไปทางขวา" })
@@ -1610,10 +1631,10 @@ vim.api.nvim_create_autocmd("VimEnter", {
       "",
       "Get started with 4 keys",
       "",
-      "Ctrl+N     New file",
-      "Ctrl+P     Find file",
-      "Ctrl+B     File explorer",
-      "Space g    Search in project",
+      WIN and "Alt+N      New file" or "Ctrl+N     New file",
+      WIN and "Alt+P      Find file" or "Ctrl+P     Find file",
+      WIN and "Alt+Shift+B  File explorer" or "Ctrl+B     File explorer",
+      WIN and "Alt+G      Search in project" or "Space g    Search in project",
     }
     local old = vim.api.nvim_get_current_buf()
     local buf = vim.api.nvim_create_buf(false, true)
@@ -1777,7 +1798,7 @@ local function new_file()
     end
   end)
 end
-map({ "n", "i" }, "<C-n>", function() vim.cmd("stopinsert"); new_file() end, { desc = "สร้างไฟล์ใหม่" })
+vscode_map({ "n", "i" }, "n", function() vim.cmd("stopinsert"); new_file() end, { desc = "สร้างไฟล์ใหม่" })
 
 -- Shift+Delete ลบบรรทัดทั้งบรรทัด (แบบ VS Code) + Ctrl+Shift+K สำรอง
 -- (บาง terminal ดัก Shift+Delete ไว้เป็น Cut เอง ถ้าไม่ติดให้ใช้ Ctrl+Shift+K แทน)
